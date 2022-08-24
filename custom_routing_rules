@@ -16,7 +16,6 @@
     "domain": [
       "domain:bitwarden.com",
       "domain:dash.cloudflare.com",
-      "domain:hostloc.com",
       "domain:ping.pe",
       "otheve.beacon.qq.com"
     ],
