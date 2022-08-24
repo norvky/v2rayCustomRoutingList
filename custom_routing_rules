@@ -9,28 +9,44 @@
     "enabled": true
   },
   {
+    "port": "",
     "inboundTag": [],
     "outboundTag": "direct",
+    "ip": [],
     "domain": [
-      "domain:ping.pe",
-      "domain:hostloc.com",
+      "domain:bitwarden.com",
       "domain:dash.cloudflare.com",
-      "domain:bitwarden.com"
+      "domain:hostloc.com",
+      "domain:ping.pe",
+      "otheve.beacon.qq.com"
     ],
+    "protocol": [],
     "enabled": true
   },
   {
+    "port": "",
     "inboundTag": [],
     "outboundTag": "proxy",
+    "ip": [],
     "domain": [
-      "domain:scloud.ws",
-      "domain:quanben.io",
-      "domain:dota2hd.com",
+      "domain:9damaogame.net",
       "domain:asrock.com",
-      "domain:o8tv.com",
       "domain:cdn.jsdelivr.net",
-      "domain:leafletjs.com"
+      "domain:dll-files.com",
+      "domain:dota2hd.com",
+      "domain:emtrek.org",
+      "domain:iopq.net",
+      "domain:leafletjs.com",
+      "domain:netdna-ssl.com",
+      "domain:o8tv.com",
+      "domain:poecdn.com",
+      "domain:quanben.io",
+      "domain:scloud.ws",
+      "domain:spartanhost.net",
+      "domain:taptap.io",
+      "domain:up4ever.download"
     ],
+    "protocol": [],
     "enabled": true
   },
   {
