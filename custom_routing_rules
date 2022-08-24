@@ -1,0 +1,109 @@
+[
+  {
+    "type": "field",
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "protocol": [
+      "bittorrent"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "domain": [
+      "domain:ping.pe",
+      "domain:hostloc.com",
+      "domain:dash.cloudflare.com",
+      "domain:bitwarden.com"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "proxy",
+    "domain": [
+      "domain:scloud.ws",
+      "domain:quanben.io",
+      "domain:dota2hd.com",
+      "domain:asrock.com",
+      "domain:o8tv.com",
+      "domain:cdn.jsdelivr.net",
+      "domain:leafletjs.com"
+    ],
+    "enabled": true
+  },
+  {
+    "type": "field",
+    "inboundTag": [],
+    "outboundTag": "block",
+    "domain": [
+      "geosite:category-ads-all"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "domain": [
+      "geosite:icloud",
+      "geosite:apple-cn",
+      "geosite:google-cn",
+      "geosite:tld-cn",
+      "geosite:category-games@cn"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "domain": [
+      "geosite:cn",
+      "geosite:private"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "ip": [
+      "geoip:cn",
+      "geoip:private"
+    ],
+    "enabled": true
+  },
+  {
+    "type": "field",
+    "inboundTag": [],
+    "outboundTag": "proxy",
+    "domain": [
+      "geosite:gfw",
+      "geosite:greatfire",
+      "geosite:tld-!cn"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "proxy",
+    "ip": [
+      "geoip:telegram"
+    ],
+    "enabled": true
+  },
+  {
+    "inboundTag": [],
+    "outboundTag": "proxy",
+    "domain": [
+      "geosite:geolocation-!cn"
+    ],
+    "enabled": true
+  },
+  {
+    "type": "field",
+    "port": "0-65535",
+    "inboundTag": [],
+    "outboundTag": "direct",
+    "enabled": true
+  }
+]
