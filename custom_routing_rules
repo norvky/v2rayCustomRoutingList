@@ -17,7 +17,8 @@
       "domain:bitwarden.com",
       "domain:dash.cloudflare.com",
       "domain:ping.pe",
-      "otheve.beacon.qq.com"
+      "otheve.beacon.qq.com",
+      "domain:cache1-hkg1.steamcontent.com"
     ],
     "protocol": [],
     "enabled": true
@@ -46,8 +47,7 @@
       "domain:shaoit.com",
       "domain:spartanhost.net",
       "domain:taptap.io",
-      "domain:up4ever.download",
-      "domain:cache1-hkg1.steamcontent.com"
+      "domain:up4ever.download"
     ],
     "protocol": [],
     "enabled": true
