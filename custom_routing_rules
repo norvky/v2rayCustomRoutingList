@@ -14,11 +14,14 @@
     "outboundTag": "direct",
     "ip": [],
     "domain": [
+      "api.steampowered.com",
       "domain:bitwarden.com",
       "domain:dash.cloudflare.com",
       "domain:ping.pe",
       "otheve.beacon.qq.com",
-      "regexp:cache(\d+)?-(hkg|sgp|tyo)(\d+)?.steamcontent.com"
+      "regexp:cache(\d+)?-(hkg|sgp|tyo)(\d+)?.steamcontent.com",
+      "regexp:cm(\d+)?-(tyo)[^1].cm.steampowered.com",
+      "regexp:ext(\d+)?-(sgp)(\d+)?.steamserver.net"
     ],
     "protocol": [],
     "enabled": true
