@@ -46,7 +46,8 @@
       "domain:shaoit.com",
       "domain:spartanhost.net",
       "domain:taptap.io",
-      "domain:up4ever.download"
+      "domain:up4ever.download",
+      "domain:cache1-hkg1.steamcontent.com"
     ],
     "protocol": [],
     "enabled": true
