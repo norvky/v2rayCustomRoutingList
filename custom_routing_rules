@@ -27,6 +27,7 @@
       "domain:code.visualstudio.com",
       "domain:dash.cloudflare.com",
       "domain:ping.pe",
+      "domain:vo.msecnd.net",
       "login.microsoftonline.com",
       "otheve.beacon.qq.com",
       "regexp:cache(\d+)?-(hkg|sgp|tyo)(\d+)?.steamcontent.com",
