@@ -14,12 +14,11 @@
     "outboundTag": "direct",
     "ip": [],
     "domain": [
-      "domain:bitwarden.com",,
-      "domain:cache1-hkg1.steamcontent.com",
-      "domain:cache5-sgp1.steamcontent.com",
-      "domain:dash.cloudflare.com"
+      "domain:bitwarden.com",
+      "domain:dash.cloudflare.com",
       "domain:ping.pe",
-      "otheve.beacon.qq.com"
+      "otheve.beacon.qq.com",
+      "regexp:cache(\d+)?-(hkg|sgp|tyo)(\d+)?.steamcontent.com"
     ],
     "protocol": [],
     "enabled": true
