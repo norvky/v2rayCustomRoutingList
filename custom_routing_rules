@@ -78,7 +78,8 @@
       "domain:shaoit.com",
       "domain:spartanhost.net",
       "domain:taptap.io",
-      "domain:up4ever.download"
+      "domain:up4ever.download",
+      "ipv6.msftconnecttest.com"
     ],
     "protocol": [],
     "enabled": true
