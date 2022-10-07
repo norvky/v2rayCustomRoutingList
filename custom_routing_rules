@@ -44,15 +44,17 @@
     "outboundTag": "direct",
     "ip": [],
     "domain": [
+      "api.steampowered.com",
       "domain:akamaihd.net",
-      "domain:steampowered.com",
       "domain:steamstatic.com",
       "ipv6check-http.steamserver.net",
       "regexp:(\\S+).gvt(\\d+)?.com",
       "regexp:cache(\\S+).steamcontent.com",
+      "regexp:cm(\\S+).steampowered.com",
       "regexp:ext(\\S+).steamserver.net",
       "steam-chat.com",
-      "steambroadcast.akamaized.net"
+      "steambroadcast.akamaized.net",
+      "test.steampowered.com"
     ],
     "protocol": [],
     "enabled": true
