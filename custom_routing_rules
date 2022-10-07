@@ -44,28 +44,18 @@
     "outboundTag": "direct",
     "ip": [],
     "domain": [
-      "api.steampowered.com",
-      "avatars.akamai.steamstatic.com",
-      "cdn.akamai.steamstatic.com",
-      "clientconfig.akamai.steamstatic.com",
-      "community.akamai.steamstatic.com",
-      "community.steamstatic.com",
-      "domain:cloudflare.steamstatic.com",
-      "redirector.gvt1.com",
-      "regexp:cache(\\d+)?-(hkg|sgp|tyo)(\\d+)?.steamcontent.com",
-      "regexp:cm(\\d+)?-(tyo)(\\d+)?.cm.steampowered.com",
-      "regexp:ext(\\d+)?-(hkg|sgp|tyo)(\\d+)?.steamserver.net",
-      "regexp:r(\\d+)?---sn-[A-Za-z0-9]+.gvt(\\d+)?.com",
+      "domain:akamaihd.net",
+      "domain:steampowered.com",
+      "domain:steamstatic.com",
+      "ipv6check-http.steamserver.net",
+      "regexp:(\\S+).gvt(\\d+)?.com",
+      "regexp:cache(\\S+).steamcontent.com",
+      "regexp:ext(\\S+).steamserver.net",
       "steam-chat.com",
-      "steambroadcast.akamaized.net",
-      "steamcdn-a.akamaihd.net",
-      "steamstore-a.akamaihd.net",
-      "steamusercontent-a.akamaihd.net",
-      "steamuserimages-a.akamaihd.net",
-      "test.steampowered.com"
+      "steambroadcast.akamaized.net"
     ],
     "protocol": [],
-    "enabled": false
+    "enabled": true
   },
   {
     "port": "",
