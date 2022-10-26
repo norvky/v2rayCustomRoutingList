@@ -66,6 +66,7 @@
     "outboundTag": "proxy",
     "ip": [],
     "domain": [
+      "docs.sheetjs.com",
       "domain:9damaogame.net",
       "domain:asrock.com",
       "domain:axure.com",
