@@ -45,7 +45,6 @@
     "outboundTag": "direct",
     "ip": [],
     "domain": [
-      "api.steampowered.com",
       "domain:akamaihd.net",
       "domain:steamstatic.com",
       "ipv6check-http.steamserver.net",
