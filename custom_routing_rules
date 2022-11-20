@@ -19,10 +19,19 @@
       "regexp:(\\S+).gvt(\\d+)?.com",
       "regexp:cache(\\S+).steamcontent.com",
       "regexp:cm(\\S+).steampowered.com",
-      "regexp:ext(\\S+).steamserver.net",
-      "steam-chat.com",
-      "test.steampowered.com"
+      "regexp:ext(\\S+).steamserver.net"
     ],
+    "protocol": [],
+    "enabled": true
+  },
+  {
+    "port": "",
+    "inboundTag": [],
+    "outboundTag": "proxy",
+    "ip": [
+      "113.29.117.44"
+    ],
+    "domain": [],
     "protocol": [],
     "enabled": true
   },
@@ -35,7 +44,12 @@
       "api.steampowered.com",
       "domain:akamaihd.net",
       "domain:steamstatic.com",
-      "steambroadcast.akamaized.net"
+      "ext1-sgp1.steamserver.net",
+      "ext1-tyo2.steamserver.net",
+      "ext2-tyo1.steamserver.net",
+      "steam-chat.com",
+      "steambroadcast.akamaized.net",
+      "test.steampowered.com"
     ],
     "protocol": [],
     "enabled": true
