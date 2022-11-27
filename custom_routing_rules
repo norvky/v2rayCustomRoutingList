@@ -28,10 +28,8 @@
       "api.steampowered.com",
       "domain:akamaihd.net",
       "domain:steamstatic.com",
-      "ext1-sgp1.steamserver.net",
-      "ext4-sgp1.steamserver.net",
-      "ext1-tyo2.steamserver.net",
-      "ext2-tyo1.steamserver.net",
+      "regexp:ext(\\S+)-sgp(\\S+).steamserver.net",
+      "regexp:ext(\\S+)-tyo(\\S+).steamserver.net",
       "steam-chat.com",
       "steambroadcast.akamaized.net",
       "test.steampowered.com"
