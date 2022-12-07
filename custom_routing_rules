@@ -125,7 +125,7 @@
     "domain": [
       "geosite:category-ads-all"
     ],
-    "enabled": true
+    "enabled": false
   },
   {
     "inboundTag": [],
