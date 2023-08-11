@@ -91,7 +91,6 @@
     "domain": [
       "docs.sheetjs.com",
       "domain:9damaogame.net",
-      "domain:vnote.fun",
       "domain:asrock.com",
       "domain:axure.com",
       "domain:babelnet.org",
@@ -103,6 +102,7 @@
       "domain:diskanalyzer.com",
       "domain:dll-files.com",
       "domain:emtrek.org",
+      "domain:input.djr.com",
       "domain:iopq.net",
       "domain:itzmx.com",
       "domain:jobthai.com",
@@ -121,6 +121,7 @@
       "domain:taptap.io",
       "domain:techtobo.com",
       "domain:up4ever.download",
+      "domain:vnote.fun",
       "domain:xicons.org",
       "ipv6.msftconnecttest.com"
     ],
