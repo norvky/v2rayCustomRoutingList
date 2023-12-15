@@ -89,6 +89,7 @@
     "outboundTag": "proxy",
     "ip": [],
     "domain": [
+      "blog.oldshensheep.com",
       "docs.sheetjs.com",
       "domain:9damaogame.net",
       "domain:asrock.com",
