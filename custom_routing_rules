@@ -126,7 +126,8 @@
       "domain:up4ever.download",
       "domain:vnote.fun",
       "domain:xicons.org",
-      "ipv6.msftconnecttest.com"
+      "ipv6.msftconnecttest.com",
+      "material-web.dev"
     ],
     "protocol": [],
     "enabled": true
