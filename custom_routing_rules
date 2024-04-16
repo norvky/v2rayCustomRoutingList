@@ -22,6 +22,18 @@
   {
     "port": "",
     "inboundTag": [],
+    "outboundTag": "direct",
+    "ip": [
+      "154.21.200.176",
+      "45.135.117.192"
+    ],
+    "domain": [],
+    "protocol": [],
+    "enabled": true
+  },
+  {
+    "port": "",
+    "inboundTag": [],
     "outboundTag": "proxy",
     "ip": [],
     "domain": [
