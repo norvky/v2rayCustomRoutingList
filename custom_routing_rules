@@ -1,5 +1,15 @@
 [
   {
+    // Crack
+    "type": "field",
+    "inboundTag": [],
+    "outboundTag": "block",
+    "domain": [
+      "domain:account.listary.com"
+    ],
+    "enabled": true
+  },
+  {
     "type": "field",
     "inboundTag": [],
     "outboundTag": "direct",
