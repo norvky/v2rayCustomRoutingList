@@ -1,6 +1,5 @@
 [
   {
-    // Crack
     "type": "field",
     "inboundTag": [],
     "outboundTag": "block",
