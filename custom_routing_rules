@@ -1,5 +1,6 @@
 [
   {
+    "_remarks": "Crack",
     "type": "field",
     "inboundTag": [],
     "outboundTag": "block",
@@ -41,6 +42,7 @@
     "enabled": true
   },
   {
+    "_remarks": "Steam",
     "port": "",
     "inboundTag": [],
     "outboundTag": "proxy",
@@ -59,6 +61,7 @@
     "enabled": true
   },
   {
+    "_remarks": "Steam",
     "port": "",
     "inboundTag": [],
     "outboundTag": "direct",
