@@ -1,6 +1,6 @@
 [
   {
-    "_remarks": "Crack",
+    "remarks": "Crack_拦截",
     "type": "field",
     "inboundTag": [],
     "outboundTag": "block",
@@ -10,6 +10,7 @@
     "enabled": true
   },
   {
+    "remarks": "BT_直连",
     "type": "field",
     "inboundTag": [],
     "outboundTag": "direct",
@@ -19,6 +20,7 @@
     "enabled": true
   },
   {
+    "remarks": "IP_代理",
     "port": "",
     "inboundTag": [],
     "outboundTag": "proxy",
@@ -30,6 +32,7 @@
     "enabled": true
   },
   {
+    "remarks": "IP_直连",
     "port": "",
     "inboundTag": [],
     "outboundTag": "direct",
@@ -42,7 +45,7 @@
     "enabled": true
   },
   {
-    "_remarks": "Steam",
+    "remarks": "Steam_代理",
     "port": "",
     "inboundTag": [],
     "outboundTag": "proxy",
@@ -61,7 +64,7 @@
     "enabled": true
   },
   {
-    "_remarks": "Steam",
+    "remarks": "Steam_直连",
     "port": "",
     "inboundTag": [],
     "outboundTag": "direct",
@@ -78,6 +81,7 @@
     "enabled": true
   },
   {
+    "remarks": "域名_直连",
     "port": "",
     "inboundTag": [],
     "outboundTag": "direct",
@@ -112,6 +116,7 @@
     "enabled": true
   },
   {
+    "remarks": "域名_代理",
     "port": "",
     "inboundTag": [],
     "outboundTag": "proxy",
@@ -185,6 +190,7 @@
     "enabled": true
   },
   {
+    "remarks": "广告_类别_拦截",
     "type": "field",
     "inboundTag": [],
     "outboundTag": "block",
@@ -194,6 +200,7 @@
     "enabled": false
   },
   {
+    "remarks": "域名_类别_拦截",
     "inboundTag": [],
     "outboundTag": "direct",
     "domain": [
@@ -206,6 +213,7 @@
     "enabled": true
   },
   {
+    "remarks": "域名_类别_直连",
     "inboundTag": [],
     "outboundTag": "direct",
     "domain": [
@@ -215,6 +223,7 @@
     "enabled": true
   },
   {
+    "remarks": "IP_类别_拦截",
     "inboundTag": [],
     "outboundTag": "direct",
     "ip": [
@@ -224,6 +233,7 @@
     "enabled": true
   },
   {
+    "remarks": "域名_类别_代理",
     "type": "field",
     "inboundTag": [],
     "outboundTag": "proxy",
@@ -235,6 +245,7 @@
     "enabled": true
   },
   {
+    "remarks": "IP_类别_代理",
     "inboundTag": [],
     "outboundTag": "proxy",
     "ip": [
@@ -243,6 +254,7 @@
     "enabled": true
   },
   {
+    "remarks": "域名_类别_代理",
     "inboundTag": [],
     "outboundTag": "proxy",
     "domain": [
@@ -251,6 +263,7 @@
     "enabled": true
   },
   {
+    "remarks": "端口_全部_直连",
     "type": "field",
     "port": "0-65535",
     "inboundTag": [],
