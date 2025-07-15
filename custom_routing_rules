@@ -138,6 +138,7 @@
       "domain:codeium.com",
       "domain:codepen.io",
       "domain:craftofexile.com",
+      "domain:dappcdn.com",
       "domain:devdocs.io",
       "domain:discourse.org",
       "domain:diskanalyzer.com",
@@ -155,6 +156,7 @@
       "domain:input.djr.com",
       "domain:itzmx.com",
       "domain:jobthai.com",
+      "domain:krita.org",
       "domain:linux.do",
       "domain:listary.com",
       "domain:lobehub.com",
@@ -191,7 +193,8 @@
       "domain:xicons.org",
       "domain:xrea.com",
       "ipv6.msftconnecttest.com",
-      "material-web.dev"
+      "material-web.dev",
+      "mirrors.bfsu.edu.cn"
     ],
     "protocol": [],
     "enabled": true
