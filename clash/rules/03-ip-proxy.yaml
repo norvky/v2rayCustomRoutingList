@@ -1,0 +1,3 @@
+# 由 custom_routing_rules 第 3 条（IP_代理）自动生成。
+payload:
+  - IP-CIDR,113.29.117.44/32,no-resolve

@@ -1,0 +1,184 @@
+# 包含“自定义规则 + 默认策略组”的主片段，不含节点与订阅配置。
+# 本文件由 scripts/generate_clash_rules.py 自动生成。
+# 说明：
+# 1) 该文件中的分组命名与订阅站模板保持一致。
+# 2) `🚀 手动选择`/`♻️ 自动选择` 默认是可启动兜底，接入时请替换为你的真实代理入口。
+
+proxy-groups:
+  - name: 🚀 手动选择
+    type: select
+    icon: https://avatars.githubusercontent.com/u/3379345?s=128
+    proxies:
+      - ♻️ 自动选择
+      - 🎯 全球直连
+  - name: ♻️ 自动选择
+    type: select
+    icon: https://avatars.githubusercontent.com/u/3379345?s=128
+    proxies:
+      - 🎯 全球直连
+  - name: 🎯 全球直连
+    type: select
+    icon: https://avatars.githubusercontent.com/u/3379345?s=128
+    proxies:
+      - DIRECT
+  - name: ⛔ 强制阻断
+    type: select
+    icon: https://avatars.githubusercontent.com/u/3379345?s=128
+    proxies:
+      - REJECT
+      - DIRECT
+  - name: 🐟 漏网策略
+    type: select
+    icon: https://avatars.githubusercontent.com/u/3379345?s=128
+    proxies:
+      - 🎯 全球直连
+      - 🚀 手动选择
+      - ♻️ 自动选择
+
+rule-providers:
+  custom-01-crack-block:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/01-crack-block.yaml
+    path: ./ruleset/custom/01-crack-block.yaml
+    interval: 86400
+
+  custom-02-bt-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/02-bt-direct.yaml
+    path: ./ruleset/custom/02-bt-direct.yaml
+    interval: 86400
+
+  custom-03-ip-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/03-ip-proxy.yaml
+    path: ./ruleset/custom/03-ip-proxy.yaml
+    interval: 86400
+
+  custom-04-ip-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/04-ip-direct.yaml
+    path: ./ruleset/custom/04-ip-direct.yaml
+    interval: 86400
+
+  custom-05-steam-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/05-steam-proxy.yaml
+    path: ./ruleset/custom/05-steam-proxy.yaml
+    interval: 86400
+
+  custom-06-steam-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/06-steam-direct.yaml
+    path: ./ruleset/custom/06-steam-direct.yaml
+    interval: 86400
+
+  custom-07-domain-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/07-domain-direct.yaml
+    path: ./ruleset/custom/07-domain-direct.yaml
+    interval: 86400
+
+  custom-08-domain-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/08-domain-proxy.yaml
+    path: ./ruleset/custom/08-domain-proxy.yaml
+    interval: 86400
+
+  custom-10-domain-category-block:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/10-domain-category-block.yaml
+    path: ./ruleset/custom/10-domain-category-block.yaml
+    interval: 86400
+
+  custom-11-domain-category-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/11-domain-category-direct.yaml
+    path: ./ruleset/custom/11-domain-category-direct.yaml
+    interval: 86400
+
+  custom-12-ip-category-block:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/12-ip-category-block.yaml
+    path: ./ruleset/custom/12-ip-category-block.yaml
+    interval: 86400
+
+  custom-13-domain-category-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/13-domain-category-proxy.yaml
+    path: ./ruleset/custom/13-domain-category-proxy.yaml
+    interval: 86400
+
+  custom-14-ip-category-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/14-ip-category-proxy.yaml
+    path: ./ruleset/custom/14-ip-category-proxy.yaml
+    interval: 86400
+
+  custom-15-domain-category-proxy-2:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/15-domain-category-proxy-2.yaml
+    path: ./ruleset/custom/15-domain-category-proxy-2.yaml
+    interval: 86400
+
+rules:
+  # 01 Crack_拦截
+  - RULE-SET,custom-01-crack-block,⛔ 强制阻断
+  # 02 BT_直连
+  - RULE-SET,custom-02-bt-direct,🎯 全球直连
+  # 03 IP_代理
+  - RULE-SET,custom-03-ip-proxy,🚀 手动选择
+  # 04 IP_直连
+  - RULE-SET,custom-04-ip-direct,🎯 全球直连
+  # 05 Steam_代理
+  - RULE-SET,custom-05-steam-proxy,🚀 手动选择
+  # 06 Steam_直连
+  - RULE-SET,custom-06-steam-direct,🎯 全球直连
+  # 07 域名_直连
+  - RULE-SET,custom-07-domain-direct,🎯 全球直连
+  # 08 域名_代理
+  - RULE-SET,custom-08-domain-proxy,🚀 手动选择
+  # 09 广告_类别_拦截
+  # 原规则 enabled=false，默认保持禁用。
+  # - RULE-SET,custom-09-ads-category-block,⛔ 强制阻断
+  # 10 域名_类别_拦截
+  - RULE-SET,custom-10-domain-category-block,🎯 全球直连
+  # 11 域名_类别_直连
+  - RULE-SET,custom-11-domain-category-direct,🎯 全球直连
+  # 12 IP_类别_拦截
+  - RULE-SET,custom-12-ip-category-block,🎯 全球直连
+  # 13 域名_类别_代理
+  - RULE-SET,custom-13-domain-category-proxy,🚀 手动选择
+  # 14 IP_类别_代理
+  - RULE-SET,custom-14-ip-category-proxy,🚀 手动选择
+  # 15 域名_类别_代理
+  - RULE-SET,custom-15-domain-category-proxy-2,🚀 手动选择
+  # 16 端口_全部_直连
+  - MATCH,🐟 漏网策略

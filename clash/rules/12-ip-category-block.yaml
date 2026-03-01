@@ -1,0 +1,5 @@
+# 由 custom_routing_rules 第 12 条（IP_类别_拦截）自动生成。
+# remarks 含“拦截”，但原规则 outboundTag=direct；按真实行为迁移。
+payload:
+  - GEOIP,cn,no-resolve
+  - GEOIP,private,no-resolve

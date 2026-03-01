@@ -1,0 +1,27 @@
+# 由 custom_routing_rules 第 7 条（域名_直连）自动生成。
+payload:
+  - DOMAIN,activity.windows.com
+  - DOMAIN,cdn.onenote.net
+  - DOMAIN,default.exp-tas.com
+  - DOMAIN,docs.live.net
+  - DOMAIN-SUFFIX,bitwarden.com
+  - DOMAIN-SUFFIX,code.visualstudio.com
+  - DOMAIN-SUFFIX,codebuddy.ai
+  - DOMAIN-SUFFIX,dash.cloudflare.com
+  - DOMAIN-SUFFIX,faconhost.com
+  - DOMAIN-SUFFIX,fdue.de
+  - DOMAIN-SUFFIX,ikun.tv
+  - DOMAIN-SUFFIX,jetbrains.com
+  - DOMAIN-SUFFIX,lencr.org
+  - DOMAIN-SUFFIX,logitech.com
+  - DOMAIN-SUFFIX,novky.me
+  - DOMAIN-SUFFIX,ping.pe
+  - DOMAIN-SUFFIX,vo.msecnd.net
+  - DOMAIN,login.live.com
+  - DOMAIN,login.microsoftonline.com
+  - DOMAIN,marketplace.visualstudio.com
+  - DOMAIN,otheve.beacon.qq.com
+  - DOMAIN,substrate.office.com
+  - DOMAIN,vscode-sync.trafficmanager.net
+  - DOMAIN,vscodeexperiments.azureedge.net
+  - DOMAIN,wcpstatic.microsoft.com

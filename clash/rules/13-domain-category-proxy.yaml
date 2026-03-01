@@ -1,0 +1,5 @@
+# 由 custom_routing_rules 第 13 条（域名_类别_代理）自动生成。
+payload:
+  - GEOSITE,gfw
+  - GEOSITE,greatfire
+  - GEOSITE,tld-!cn

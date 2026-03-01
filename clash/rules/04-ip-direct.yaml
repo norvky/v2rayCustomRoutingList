@@ -1,0 +1,4 @@
+# 由 custom_routing_rules 第 4 条（IP_直连）自动生成。
+payload:
+  - IP-CIDR,154.21.200.176/32,no-resolve
+  - IP-CIDR,45.135.117.192/32,no-resolve

@@ -1,0 +1,3 @@
+# 由 custom_routing_rules 第 14 条（IP_类别_代理）自动生成。
+payload:
+  - GEOIP,telegram,no-resolve

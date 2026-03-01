@@ -1,0 +1,10 @@
+# 由 custom_routing_rules 第 5 条（Steam_代理）自动生成。
+payload:
+  - DOMAIN,api.steampowered.com
+  - DOMAIN-SUFFIX,akamaihd.net
+  - DOMAIN-SUFFIX,steamstatic.com
+  - DOMAIN-REGEX,ext(\S+)-sgp(\S+).steamserver.net
+  - DOMAIN-REGEX,ext(\S+)-tyo(\S+).steamserver.net
+  - DOMAIN,steam-chat.com
+  - DOMAIN,steambroadcast.akamaized.net
+  - DOMAIN,test.steampowered.com

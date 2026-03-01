@@ -1,0 +1,7 @@
+# 可选：继续沿用 v2ray-rules-dat 作为 GEO 基础数据源。
+# 若你已在主配置设置 geox-url，则以主配置为准。
+
+geodata-mode: true
+geox-url:
+  geoip: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geoip.dat
+  geosite: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite.dat
