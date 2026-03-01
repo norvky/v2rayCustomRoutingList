@@ -23,7 +23,7 @@ python3 scripts/generate_clash_rules.py --no-template
 - `rules/*.yaml`：按 `custom_routing_rules` 顺序拆分后的 rule-provider 文件。
 - `mihomo-custom-rules.yaml`：主片段，包含 `proxy-groups`、`rule-providers` 与 `rules`。
 - `template.fake-ip.yaml`：可用于订阅站渲染的模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。
-- `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组 + icon）。
+- `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组）。
 - `geox-url-v2ray-rules-dat.yaml`：可选 GEO 数据源片段。
 
 ## 接入建议（Android / PC 通用）
