@@ -12,9 +12,14 @@ dns:
   nameserver:
     - tls://8.8.8.8
     - tls://1.1.1.1
+  direct-nameserver:
+    - https://1.12.12.12/dns-query
   default-nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
+    - tls://1.12.12.12
+  proxy-server-nameserver:
+    - https://1.12.12.12/dns-query
+  ipv6: false
+  listen: 0.0.0.0:7874
   nameserver-policy:
     geosite:cn:
       - 223.5.5.5
@@ -22,6 +27,7 @@ dns:
   fake-ip-filter:
     - +.lan
     - +.local
+    - +.example.com
 proxies: null
 proxy-groups:
   - name: 🚀 手动选择
