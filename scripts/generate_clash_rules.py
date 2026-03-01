@@ -532,18 +532,8 @@ def write_subscription_template(
     lines.append("# 1) `__PROXY_PROVIDERS__` 与 `__PROXY_NODES__` 由订阅站在渲染阶段替换。")
     lines.append("# 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。")
     lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。")
-    lines.append("# 4) 模板内置 geox-url，默认固定使用 v2ray-rules-dat 的 GEO 数据。")
     lines.append("")
     lines.append("mode: rule")
-    # 统一锁定 GEO 数据源，避免客户端“更新 GeoData”落到不同默认地址导致行为不一致。
-    lines.append("geodata-mode: true")
-    lines.append("geox-url:")
-    lines.append(
-        "  geoip: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geoip.dat"
-    )
-    lines.append(
-        "  geosite: https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite.dat"
-    )
     lines.append("dns:")
     lines.append("  enable: true")
     lines.append("  enhanced-mode: fake-ip")
