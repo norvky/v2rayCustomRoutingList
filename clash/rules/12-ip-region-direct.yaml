@@ -1,0 +1,4 @@
+# 由 custom_routing_rules 第 12 条（IP_区域_直连）自动生成。
+payload:
+  - GEOIP,cn,no-resolve
+  - GEOIP,private,no-resolve

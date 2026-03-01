@@ -1,0 +1,4 @@
+# 由 custom_routing_rules 第 11 条（域名_区域_直连）自动生成。
+payload:
+  - GEOSITE,cn
+  - GEOSITE,private

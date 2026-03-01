@@ -95,28 +95,28 @@ rule-providers:
     path: ./ruleset/custom/08-domain-proxy.yaml
     interval: 86400
 
-  custom-10-domain-category-block:
+  custom-10-domain-category-direct:
     type: http
     behavior: classical
     format: yaml
-    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/10-domain-category-block.yaml
-    path: ./ruleset/custom/10-domain-category-block.yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/10-domain-category-direct.yaml
+    path: ./ruleset/custom/10-domain-category-direct.yaml
     interval: 86400
 
-  custom-11-domain-category-direct:
+  custom-11-domain-region-direct:
     type: http
     behavior: classical
     format: yaml
-    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/11-domain-category-direct.yaml
-    path: ./ruleset/custom/11-domain-category-direct.yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/11-domain-region-direct.yaml
+    path: ./ruleset/custom/11-domain-region-direct.yaml
     interval: 86400
 
-  custom-12-ip-category-block:
+  custom-12-ip-region-direct:
     type: http
     behavior: classical
     format: yaml
-    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/12-ip-category-block.yaml
-    path: ./ruleset/custom/12-ip-category-block.yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/12-ip-region-direct.yaml
+    path: ./ruleset/custom/12-ip-region-direct.yaml
     interval: 86400
 
   custom-13-domain-category-proxy:
@@ -135,12 +135,12 @@ rule-providers:
     path: ./ruleset/custom/14-ip-category-proxy.yaml
     interval: 86400
 
-  custom-15-domain-category-proxy-2:
+  custom-15-domain-region-proxy:
     type: http
     behavior: classical
     format: yaml
-    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/15-domain-category-proxy-2.yaml
-    path: ./ruleset/custom/15-domain-category-proxy-2.yaml
+    url: https://raw.githubusercontent.com/novcky/v2rayCustomRoutingList/main/clash/rules/15-domain-region-proxy.yaml
+    path: ./ruleset/custom/15-domain-region-proxy.yaml
     interval: 86400
 
 rules:
@@ -163,17 +163,17 @@ rules:
   # 09 广告_类别_拦截
   # 原规则 enabled=false，默认保持禁用。
   # - RULE-SET,custom-09-ads-category-block,⛔ 强制阻断
-  # 10 域名_类别_拦截
-  - RULE-SET,custom-10-domain-category-block,🎯 全球直连
-  # 11 域名_类别_直连
-  - RULE-SET,custom-11-domain-category-direct,🎯 全球直连
-  # 12 IP_类别_拦截
-  - RULE-SET,custom-12-ip-category-block,🎯 全球直连
+  # 10 域名_类别_直连
+  - RULE-SET,custom-10-domain-category-direct,🎯 全球直连
+  # 11 域名_区域_直连
+  - RULE-SET,custom-11-domain-region-direct,🎯 全球直连
+  # 12 IP_区域_直连
+  - RULE-SET,custom-12-ip-region-direct,🎯 全球直连
   # 13 域名_类别_代理
   - RULE-SET,custom-13-domain-category-proxy,🚀 手动选择
   # 14 IP_类别_代理
   - RULE-SET,custom-14-ip-category-proxy,🚀 手动选择
-  # 15 域名_类别_代理
-  - RULE-SET,custom-15-domain-category-proxy-2,🚀 手动选择
+  # 15 域名_区域_代理
+  - RULE-SET,custom-15-domain-region-proxy,🚀 手动选择
   # 16 端口_全部_直连
   - MATCH,🐟 漏网策略

@@ -72,7 +72,6 @@
     "domain": [
       "domain:dota2hd.com",
       "ipv6check-http.steamserver.net",
-      "regexp:(\\S+).gvt(\\d+)?.com",
       "regexp:cache(\\S+).steamcontent.com",
       "regexp:cm(\\S+).steampowered.com",
       "regexp:ext(\\S+).steamserver.net"
@@ -225,20 +224,19 @@
     "enabled": false
   },
   {
-    "remarks": "域名_类别_拦截",
+    "remarks": "域名_类别_直连",
     "inboundTag": [],
     "outboundTag": "direct",
     "domain": [
       "geosite:icloud",
       "geosite:apple-cn",
-      "geosite:google-cn",
       "geosite:tld-cn",
       "geosite:category-games@cn"
     ],
     "enabled": true
   },
   {
-    "remarks": "域名_类别_直连",
+    "remarks": "域名_区域_直连",
     "inboundTag": [],
     "outboundTag": "direct",
     "domain": [
@@ -248,7 +246,7 @@
     "enabled": true
   },
   {
-    "remarks": "IP_类别_拦截",
+    "remarks": "IP_区域_直连",
     "inboundTag": [],
     "outboundTag": "direct",
     "ip": [
@@ -279,7 +277,7 @@
     "enabled": true
   },
   {
-    "remarks": "域名_类别_代理",
+    "remarks": "域名_区域_代理",
     "inboundTag": [],
     "outboundTag": "proxy",
     "domain": [

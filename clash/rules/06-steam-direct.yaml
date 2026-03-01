@@ -2,7 +2,6 @@
 payload:
   - DOMAIN-SUFFIX,dota2hd.com
   - DOMAIN,ipv6check-http.steamserver.net
-  - DOMAIN-REGEX,(\S+).gvt(\d+)?.com
   - DOMAIN-REGEX,cache(\S+).steamcontent.com
   - DOMAIN-REGEX,cm(\S+).steampowered.com
   - DOMAIN-REGEX,ext(\S+).steamserver.net

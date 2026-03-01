@@ -14,12 +14,15 @@ from pathlib import Path
 from typing import Iterable
 
 REMARK_TOKEN_MAP = {
+    # 将 remarks 中的稳定词元映射为 ASCII 片段，保证 provider/file 名可读且跨平台兼容。
+    # 未映射词元会在 to_slug 中被忽略；若不同规则退化到同一 slug，会触发序号后缀并增加引用漂移风险。
     "crack": "crack",
     "bt": "bt",
     "ip": "ip",
     "steam": "steam",
     "域名": "domain",
     "类别": "category",
+    "区域": "region",
     "直连": "direct",
     "代理": "proxy",
     "拦截": "block",
@@ -29,6 +32,7 @@ REMARK_TOKEN_MAP = {
 }
 
 POLICY_MAP = {
+    # 统一保留三类语义标签，便于后续扩展其它输出模板时复用策略映射。
     "direct": "direct",
     "proxy": "proxy",
     "block": "block",
@@ -43,6 +47,12 @@ PROTOCOL_FALLBACK_MAP = {
 
 @dataclass
 class ConvertedRule:
+    """单条源规则转换后的统一中间结构。
+
+    这里把“生成文件名/provider 名”“规则 payload”“迁移备注和告警”聚合在一起，
+    目的是让后续写文件阶段只关心输出，不再重复解析源 JSON。
+    """
+
     index: int
     remarks: str
     enabled: bool
@@ -56,6 +66,11 @@ class ConvertedRule:
 
 
 def parse_args() -> argparse.Namespace:
+    """解析命令行参数。
+
+    参数默认值覆盖了仓库常见用法，保证在项目根目录直接执行即可产出完整文件。
+    """
+
     parser = argparse.ArgumentParser(description="生成 Clash/mihomo 自定义规则文件")
     parser.add_argument(
         "--input",
@@ -102,6 +117,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def infer_repo_slug(project_root: Path) -> str:
+    """从 git remote 尝试推断 `owner/repo`。
+
+    失败时返回空字符串，由调用方决定是否报错退出，避免在该函数里混入 CLI 交互逻辑。
+    """
+
     try:
         result = subprocess.run(
             ["git", "-C", str(project_root), "config", "--get", "remote.origin.url"],
@@ -119,6 +139,11 @@ def infer_repo_slug(project_root: Path) -> str:
 
 
 def parse_repo_slug_from_url(url: str) -> str:
+    """从常见 GitHub remote URL 提取 `owner/repo`。
+
+    仅匹配已知格式；未匹配时返回空字符串，避免误解析导致生成错误的 raw URL。
+    """
+
     # 支持：
     # - https://github.com/owner/repo.git
     # - git@github.com:owner/repo.git
@@ -136,6 +161,11 @@ def parse_repo_slug_from_url(url: str) -> str:
 
 
 def load_source_rules(path: Path) -> list[dict]:
+    """加载并校验源规则 JSON。
+
+    约束源文件必须是数组；如果结构异常直接抛错，防止后续静默生成不完整规则。
+    """
+
     with path.open("r", encoding="utf-8") as fp:
         data = json.load(fp)
     if not isinstance(data, list):
@@ -144,6 +174,13 @@ def load_source_rules(path: Path) -> list[dict]:
 
 
 def to_slug(remarks: str, used: set[str]) -> str:
+    """将 remarks 转换为 provider/file 使用的 slug。
+
+    设计目标：
+    1) 尽量保留语义可读性，便于排障时从文件名反推来源规则；
+    2) 在名称冲突时稳定追加序号，避免覆盖已有生成物。
+    """
+
     parts: list[str] = []
     for token in re.split(r"[_\s]+", remarks.strip()):
         if not token:
@@ -156,6 +193,7 @@ def to_slug(remarks: str, used: set[str]) -> str:
         if ascii_part:
             parts.extend([item for item in ascii_part.split("-") if item])
 
+    # 当 remarks 含未知中文词元时，可能得到空/重复 slug；这里保底为 rule 并在冲突时追加序号。
     slug = "-".join(parts) if parts else "rule"
     if slug not in used:
         used.add(slug)
@@ -171,6 +209,8 @@ def to_slug(remarks: str, used: set[str]) -> str:
 
 
 def convert_domain(item: str, warnings: list[str]) -> str:
+    """将 v2ray domain 条目转换为 Clash classical 规则。"""
+
     if item.startswith("domain:"):
         return f"DOMAIN-SUFFIX,{item[7:]}"
     if item.startswith("full:"):
@@ -188,6 +228,11 @@ def convert_domain(item: str, warnings: list[str]) -> str:
 
 
 def convert_ip(item: str, warnings: list[str]) -> str:
+    """将 v2ray IP/geoip 条目转换为 Clash classical 规则。
+
+    解析失败时会降级保留原值并写入 warning，避免因单条脏数据中断整批生成。
+    """
+
     if item.startswith("geoip:"):
         return f"GEOIP,{item[6:]},no-resolve"
 
@@ -212,6 +257,8 @@ def convert_ip(item: str, warnings: list[str]) -> str:
 
 
 def convert_protocol(item: str, notes: list[str], warnings: list[str]) -> str:
+    """将 v2ray protocol 条目转换为 Clash 可表达的近似规则。"""
+
     key = item.strip().lower()
     if not key:
         return ""
@@ -227,6 +274,11 @@ def convert_protocol(item: str, notes: list[str], warnings: list[str]) -> str:
 
 
 def dedupe_keep_order(items: Iterable[str]) -> list[str]:
+    """按首次出现顺序去重。
+
+    规则顺序会影响命中行为，因此不能使用会打乱顺序的去重方式。
+    """
+
     seen: set[str] = set()
     result: list[str] = []
     for item in items:
@@ -238,11 +290,19 @@ def dedupe_keep_order(items: Iterable[str]) -> list[str]:
 
 
 def is_full_port_range(port_expr: str) -> bool:
+    """判断端口表达式是否为全端口范围。"""
+
     compact = port_expr.replace(" ", "")
     return compact in {"0-65535", "1-65535"}
 
 
 def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRule:
+    """将单条源规则转换为 `ConvertedRule`。
+
+    这里集中处理 domain/ip/protocol/port 四类匹配项，并产出 notes/warnings，
+    让写文件阶段只做纯输出拼装。
+    """
+
     remarks = str(source.get("remarks", f"rule-{index}"))
     enabled = bool(source.get("enabled", True))
     outbound = str(source.get("outboundTag", "direct")).strip() or "direct"
@@ -251,6 +311,7 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
     payload_items: list[str] = []
     is_match_all = False
 
+    # `or []` 用于容错 null，避免历史数据写成 `domain: null` 时抛异常。
     for domain_item in source.get("domain", []) or []:
         payload_items.append(convert_domain(str(domain_item), warnings))
 
@@ -260,6 +321,7 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
     for protocol_item in source.get("protocol", []) or []:
         payload_items.append(convert_protocol(str(protocol_item), notes, warnings))
 
+    # 端口规则在 v2ray 与 Clash 的最佳实践不同：全端口兜底统一归一化为 MATCH。
     port = str(source.get("port", "")).strip()
     if port:
         if is_full_port_range(port) and not payload_items:
@@ -271,6 +333,7 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
 
     payload = dedupe_keep_order(payload_items)
 
+    # 显式提示“命名语义”和“真实策略”不一致，降低后续维护误判概率。
     if "拦截" in remarks and outbound == "direct":
         notes.append("remarks 含“拦截”，但原规则 outboundTag=direct；按真实行为迁移。")
 
@@ -296,6 +359,8 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
 
 
 def write_rule_file(path: Path, rule: ConvertedRule) -> None:
+    """写入单条 rule-provider 文件。"""
+
     lines: list[str] = []
     lines.append(f"# 由 custom_routing_rules 第 {rule.index} 条（{rule.remarks}）自动生成。")
     if rule.notes:
@@ -318,6 +383,13 @@ def write_main_file(
     interval: int,
     github_id: str,
 ) -> None:
+    """生成 `mihomo-custom-rules.yaml` 主片段。
+
+    文件目标是“可直接并入主配置”，因此同时输出策略组、provider 声明和规则顺序。
+    """
+
+    # 参数保留：当前主片段未使用图标字段，但保持签名一致可减少未来模板合并成本。
+    _ = github_id
     proxy_group = "🚀 手动选择"
     auto_group = "♻️ 自动选择"
     direct_group = "🎯 全球直连"
@@ -325,6 +397,7 @@ def write_main_file(
     fallback_group = "🐟 漏网策略"
 
     def map_policy_group(outbound: str) -> str:
+        # 未识别策略统一回落到直连，避免生成不可用组名导致客户端加载失败。
         if outbound == "proxy":
             return proxy_group
         if outbound == "block":
@@ -364,6 +437,7 @@ def write_main_file(
     lines.append(f"      - {proxy_group}")
     lines.append(f"      - {auto_group}")
     lines.append("")
+    # 先写 provider 声明，便于阅读时先看到“依赖了哪些规则文件”。
     lines.append("rule-providers:")
     for rule in rules:
         if rule.is_match_all or not rule.enabled:
@@ -385,6 +459,7 @@ def write_main_file(
         policy_group = map_policy_group(rule.outbound)
         lines.append(f"  # {rule.index:02d} {rule.remarks}")
         if rule.is_match_all:
+            # MATCH 是终止型规则；只允许保留最后一次启用结果。
             if not rule.enabled:
                 lines.append("  # 原规则 enabled=false，默认保持禁用。")
                 lines.append(f"  # - MATCH,{fallback_group}")
@@ -393,17 +468,24 @@ def write_main_file(
             has_terminal_match = True
             continue
         if not rule.enabled:
+            # disabled 条目保留为注释，便于回滚时直接取消注释恢复。
             lines.append("  # 原规则 enabled=false，默认保持禁用。")
             lines.append(f"  # - RULE-SET,{rule.provider_name},{policy_group}")
             continue
         lines.append(f"  - RULE-SET,{rule.provider_name},{policy_group}")
 
     if not has_terminal_match:
+        # 防御式兜底：源规则若未包含全端口/全流量兜底，自动补一个 MATCH。
         lines.append(f"  - MATCH,{fallback_group}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def write_proxy_group_example(path: Path, github_id: str) -> None:
+    """生成独立的策略组示例文件。"""
+
+    # 参数保留：示例文件暂未写入 icon 字段，后续如需接入可直接复用调用签名。
+    _ = github_id
+    # 这里输出的是“最小可启动分组”，便于用户在不同订阅模板之间复用命名。
     lines = [
         "# 可选示例：与订阅站模板同名分组，便于在本地与模板之间保持一致行为。",
         "# 说明：",
@@ -444,6 +526,8 @@ def write_proxy_group_example(path: Path, github_id: str) -> None:
 
 
 def write_geox_url_snippet(path: Path) -> None:
+    """生成 geox-url 片段，便于继续沿用 v2ray-rules-dat。"""
+
     lines = [
         "# 可选：继续沿用 v2ray-rules-dat 作为 GEO 基础数据源。",
         "# 若你已在主配置设置 geox-url，则以主配置为准。",
@@ -457,6 +541,8 @@ def write_geox_url_snippet(path: Path) -> None:
 
 
 def write_readme(path: Path) -> None:
+    """生成 clash 目录下的使用说明文档。"""
+
     lines = [
         "# Clash / mihomo 自定义规则迁移说明",
         "",
@@ -512,6 +598,13 @@ def write_subscription_template(
     interval: int,
     github_id: str,
 ) -> None:
+    """生成订阅站 fake-ip 模板。
+
+    模板与主片段共享同一套规则语义，但包含订阅站占位符与更完整的 DNS 基础段。
+    """
+
+    # 参数保留：模板当前不直接拼 icon URL，保留签名便于后续无破坏扩展。
+    _ = github_id
     # 模板默认使用固定分组名，确保订阅站渲染前后命名稳定，不影响规则引用。
     proxy_group = "🚀 手动选择"
     auto_group = "♻️ 自动选择"
@@ -520,6 +613,7 @@ def write_subscription_template(
     fallback_group = "🐟 漏网策略"
 
     def map_policy_group(outbound: str) -> str:
+        # 与主片段保持相同映射策略，避免模板与本地规则行为分叉。
         if outbound == "proxy":
             return proxy_group
         if outbound == "block":
@@ -620,6 +714,7 @@ def write_subscription_template(
         lines.append(f"  - RULE-SET,{rule.provider_name},{map_policy_group(rule.outbound)}")
     if not has_terminal_match:
         lines.append(f"  - MATCH,{fallback_group}")
+    # 模板中的 provider 路径使用 `./providers/custom/`，与常见订阅站目录结构兼容。
     lines.append("rule-providers:")
     for rule in rules:
         if rule.is_match_all or not rule.enabled:
@@ -638,6 +733,11 @@ def write_subscription_template(
 
 
 def cleanup_generated_rule_files(rules_dir: Path) -> None:
+    """清理旧的自动生成 rule 文件。
+
+    仅删除符合“序号-名称”格式的文件，避免误删用户手工维护的自定义规则文件。
+    """
+
     # 仅清理“序号前缀”的生成产物，避免误删用户手工维护的其它文件。
     pattern = re.compile(r"^\d{2}-.+\.ya?ml$")
     for file_path in rules_dir.glob("*.y*ml"):
@@ -646,6 +746,8 @@ def cleanup_generated_rule_files(rules_dir: Path) -> None:
 
 
 def main() -> int:
+    """脚本主流程：读取源规则 -> 转换 -> 写入各类产物。"""
+
     args = parse_args()
     project_root = Path(__file__).resolve().parent.parent
     input_path = (project_root / args.input).resolve()
@@ -655,6 +757,7 @@ def main() -> int:
         print(f"[ERROR] 找不到输入文件: {input_path}", file=sys.stderr)
         return 1
 
+    # 优先使用显式参数；为空时再回退到 git remote 推断，减少 CI/离线环境失败概率。
     repo = args.repo.strip() or infer_repo_slug(project_root)
     if not repo:
         print(
@@ -667,6 +770,7 @@ def main() -> int:
 
     rules_dir = output_dir / "rules"
     rules_dir.mkdir(parents=True, exist_ok=True)
+    # 先删后写可避免重命名后留下“旧 provider 文件”被误引用。
     cleanup_generated_rule_files(rules_dir)
 
     used_slugs: set[str] = set()
@@ -704,6 +808,7 @@ def main() -> int:
 
     print(f"[OK] 已生成 {len(converted)} 条规则到: {output_dir}")
     if all_warnings:
+        # warning 输出到 stderr，便于在 CI 中与正常日志分流采集。
         print("[WARN] 需要人工关注的迁移项：", file=sys.stderr)
         for item in all_warnings:
             print(f"  - {item}", file=sys.stderr)

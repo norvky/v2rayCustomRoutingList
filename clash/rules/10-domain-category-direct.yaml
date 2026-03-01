@@ -1,0 +1,6 @@
+# 由 custom_routing_rules 第 10 条（域名_类别_直连）自动生成。
+payload:
+  - GEOSITE,icloud
+  - GEOSITE,apple-cn
+  - GEOSITE,tld-cn
+  - GEOSITE,category-games@cn

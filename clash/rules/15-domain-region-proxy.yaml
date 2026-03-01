@@ -1,0 +1,3 @@
+# 由 custom_routing_rules 第 15 条（域名_区域_代理）自动生成。
+payload:
+  - GEOSITE,geolocation-!cn
