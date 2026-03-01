@@ -341,29 +341,24 @@ def write_main_file(
     lines.append("proxy-groups:")
     lines.append(f"  - name: {proxy_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append(f"      - {auto_group}")
     lines.append(f"      - {direct_group}")
     lines.append(f"  - name: {auto_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append(f"      - {direct_group}")
     lines.append(f"  - name: {direct_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append("      - DIRECT")
     lines.append(f"  - name: {block_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append("      - REJECT")
     lines.append("      - DIRECT")
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append(f"      - {direct_group}")
     lines.append(f"      - {proxy_group}")
@@ -414,38 +409,32 @@ def write_proxy_group_example(path: Path, github_id: str) -> None:
         "# 说明：",
         "# 1) 这里的 `🚀 手动选择` / `♻️ 自动选择` 是可启动兜底，请替换为你的真实代理入口。",
         "# 2) `🐟 漏网策略` 作为末尾 MATCH 指向组，可在客户端一键切换直连/代理。",
-        "# 3) icon 使用 GitHub 头像，便于在 UI 识别自定义分组。",
         "",
         "proxy-groups:",
         "  - name: 🚀 手动选择",
         "    type: select",
-        f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128",
         "    proxies:",
         "      - ♻️ 自动选择",
         "      - 🎯 全球直连",
         "",
         "  - name: ♻️ 自动选择",
         "    type: select",
-        f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128",
         "    proxies:",
         "      - 🎯 全球直连",
         "",
         "  - name: 🎯 全球直连",
         "    type: select",
-        f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128",
         "    proxies:",
         "      - DIRECT",
         "",
         "  - name: ⛔ 强制阻断",
         "    type: select",
-        f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128",
         "    proxies:",
         "      - REJECT",
         "      - DIRECT",
         "",
         "  - name: 🐟 漏网策略",
         "    type: select",
-        f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128",
         "    proxies:",
         "      - 🎯 全球直连",
         "      - 🚀 手动选择",
@@ -494,7 +483,7 @@ def write_readme(path: Path) -> None:
         "- `rules/*.yaml`：按 `custom_routing_rules` 顺序拆分后的 rule-provider 文件。",
         "- `mihomo-custom-rules.yaml`：主片段，包含 `proxy-groups`、`rule-providers` 与 `rules`。",
         "- `template.fake-ip.yaml`：可用于订阅站渲染的模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。",
-        "- `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组 + icon）。",
+        "- `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组）。",
         "- `geox-url-v2ray-rules-dat.yaml`：可选 GEO 数据源片段。",
         "",
         "## 接入建议（Android / PC 通用）",
@@ -566,7 +555,6 @@ def write_subscription_template(
     lines.append("proxy-groups:")
     lines.append(f"  - name: {proxy_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    include-all: true")
     lines.append("    include-all-proxies: true")
     lines.append("    include-all-providers: true")
@@ -576,7 +564,6 @@ def write_subscription_template(
     lines.append("      - __PROXY_NODES__")
     lines.append(f"  - name: {auto_group}")
     lines.append("    type: url-test")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    include-all: true")
     lines.append("    include-all-proxies: true")
     lines.append("    include-all-providers: true")
@@ -588,18 +575,15 @@ def write_subscription_template(
     lines.append("    tolerance: 50")
     lines.append(f"  - name: {direct_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append("      - DIRECT")
     lines.append(f"  - name: {block_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    proxies:")
     lines.append("      - REJECT")
     lines.append("      - DIRECT")
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
-    lines.append(f"    icon: https://avatars.githubusercontent.com/u/{github_id}?s=128")
     lines.append("    include-all: true")
     lines.append("    include-all-proxies: true")
     lines.append("    include-all-providers: true")

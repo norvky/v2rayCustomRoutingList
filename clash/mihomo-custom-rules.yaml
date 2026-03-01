@@ -7,29 +7,24 @@
 proxy-groups:
   - name: 🚀 手动选择
     type: select
-    icon: https://avatars.githubusercontent.com/u/3379345?s=128
     proxies:
       - ♻️ 自动选择
       - 🎯 全球直连
   - name: ♻️ 自动选择
     type: select
-    icon: https://avatars.githubusercontent.com/u/3379345?s=128
     proxies:
       - 🎯 全球直连
   - name: 🎯 全球直连
     type: select
-    icon: https://avatars.githubusercontent.com/u/3379345?s=128
     proxies:
       - DIRECT
   - name: ⛔ 强制阻断
     type: select
-    icon: https://avatars.githubusercontent.com/u/3379345?s=128
     proxies:
       - REJECT
       - DIRECT
   - name: 🐟 漏网策略
     type: select
-    icon: https://avatars.githubusercontent.com/u/3379345?s=128
     proxies:
       - 🎯 全球直连
       - 🚀 手动选择
