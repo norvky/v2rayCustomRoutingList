@@ -3,6 +3,7 @@
 # 1) `__PROXY_PROVIDERS__` 与 `__PROXY_NODES__` 由订阅站在渲染阶段替换。
 # 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。
 # 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。
+# 4) 当前模板档位：compat。
 
 port: 7890
 socks-port: 7891

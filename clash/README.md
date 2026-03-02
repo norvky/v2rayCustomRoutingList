@@ -12,6 +12,18 @@ python3 scripts/generate_clash_rules.py
 python3 scripts/generate_clash_rules.py --repo novcky/v2rayCustomRoutingList --branch main --github-id 3379345
 ```
 
+使用增强模板（保持规则来源仍为 `custom_routing_rules`）：
+
+```bash
+python3 scripts/generate_clash_rules.py --template-profile boost
+```
+
+启用严格模式（出现 warning 时退出，适合 CI）：
+
+```bash
+python3 scripts/generate_clash_rules.py --strict
+```
+
 如需只生成规则片段，不生成订阅站模板：
 
 ```bash
@@ -36,6 +48,8 @@ python3 scripts/generate_clash_rules.py --no-template
 ## 兼容差异
 
 - `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。
+- 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。
+- `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。
 - 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。
 - 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。
 - `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。

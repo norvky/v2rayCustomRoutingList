@@ -60,6 +60,7 @@ class ConvertedRule:
     provider_name: str
     file_name: str
     payload: list[str]
+    policy_group: str | None = None
     is_match_all: bool = False
     notes: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -112,6 +113,17 @@ def parse_args() -> argparse.Namespace:
         "--no-template",
         action="store_true",
         help="不生成订阅站模板文件",
+    )
+    parser.add_argument(
+        "--template-profile",
+        choices=("compat", "boost"),
+        default="compat",
+        help="订阅站模板配置档位：compat(兼容优先)/boost(增强优先)",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="严格模式：出现任何 warning 即返回非 0",
     )
     return parser.parse_args()
 
@@ -171,6 +183,82 @@ def load_source_rules(path: Path) -> list[dict]:
     if not isinstance(data, list):
         raise ValueError("源规则文件不是 JSON 数组")
     return data
+
+
+def validate_source_rules(source_rules: list[dict]) -> tuple[list[str], list[str]]:
+    """校验源规则结构，提前暴露高风险问题。
+
+    这里仅做“结构校验 + 兼容性校验”，不改写输入内容，避免静默修复掩盖问题来源。
+    """
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    remarks_seen: dict[str, int] = {}
+    enabled_match_all_indexes: list[int] = []
+
+    for idx, item in enumerate(source_rules, 1):
+        if not isinstance(item, dict):
+            errors.append(f"#{idx:02d} 规则不是对象，实际类型为 `{type(item).__name__}`。")
+            continue
+
+        remarks = str(item.get("remarks", f"rule-{idx}")).strip() or f"rule-{idx}"
+        if remarks in remarks_seen:
+            warnings.append(
+                f"#{idx:02d} 与 #{remarks_seen[remarks]:02d} 的 remarks 同名：`{remarks}`。"
+            )
+        else:
+            remarks_seen[remarks] = idx
+
+        outbound_raw = str(item.get("outboundTag", "direct")).strip()
+        outbound = outbound_raw.lower()
+        if outbound and outbound not in POLICY_MAP:
+            warnings.append(
+                f"#{idx:02d} `{remarks}` 的 outboundTag=`{outbound_raw}` 未识别，将回落为 direct。"
+            )
+
+        for list_key in ("domain", "ip", "protocol"):
+            if list_key in item and item[list_key] is not None and not isinstance(
+                item[list_key], list
+            ):
+                errors.append(
+                    f"#{idx:02d} `{remarks}` 的 `{list_key}` 必须是数组或 null。"
+                )
+
+        if "policyGroup" in item and item["policyGroup"] is not None and not isinstance(
+            item["policyGroup"], str
+        ):
+            errors.append(f"#{idx:02d} `{remarks}` 的 `policyGroup` 必须是字符串或 null。")
+
+        enabled_raw = item.get("enabled", True)
+        if not isinstance(enabled_raw, bool):
+            warnings.append(
+                f"#{idx:02d} `{remarks}` 的 enabled 非布尔值，将按 Python bool 规则处理。"
+            )
+
+        port_raw = item.get("port", "")
+        if port_raw is None:
+            port = ""
+        elif isinstance(port_raw, (str, int)):
+            port = str(port_raw).strip()
+        else:
+            errors.append(f"#{idx:02d} `{remarks}` 的 `port` 必须是字符串/数字/null。")
+            port = ""
+
+        has_domain = bool(item.get("domain"))
+        has_ip = bool(item.get("ip"))
+        has_protocol = bool(item.get("protocol"))
+        if bool(enabled_raw) and is_full_port_range(port) and not (
+            has_domain or has_ip or has_protocol
+        ):
+            enabled_match_all_indexes.append(idx)
+
+    if len(enabled_match_all_indexes) > 1:
+        warnings.append(
+            "存在多条已启用“全端口兜底”规则，后出现的 MATCH 会遮蔽前者："
+            + ", ".join(f"#{idx:02d}" for idx in enabled_match_all_indexes)
+        )
+
+    return errors, warnings
 
 
 def to_slug(remarks: str, used: set[str]) -> str:
@@ -305,11 +393,28 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
 
     remarks = str(source.get("remarks", f"rule-{index}"))
     enabled = bool(source.get("enabled", True))
-    outbound = str(source.get("outboundTag", "direct")).strip() or "direct"
+    outbound = (str(source.get("outboundTag", "direct")).strip() or "direct").lower()
     notes: list[str] = []
     warnings: list[str] = []
     payload_items: list[str] = []
     is_match_all = False
+    policy_group: str | None = None
+
+    # 非预期策略值统一回落到 direct，保证生成配置可加载。
+    if outbound not in POLICY_MAP:
+        warnings.append(f"未识别的 outboundTag=`{outbound}`，已回落到 direct。")
+        outbound = "direct"
+
+    policy_group_raw = source.get("policyGroup")
+    if policy_group_raw is not None:
+        if isinstance(policy_group_raw, str):
+            normalized_group = policy_group_raw.strip()
+            if normalized_group:
+                policy_group = normalized_group
+            else:
+                warnings.append("policyGroup 为空字符串，已忽略。")
+        else:
+            warnings.append("policyGroup 不是字符串，已忽略。")
 
     # `or []` 用于容错 null，避免历史数据写成 `domain: null` 时抛异常。
     for domain_item in source.get("domain", []) or []:
@@ -352,10 +457,64 @@ def convert_rule(index: int, source: dict, used_slugs: set[str]) -> ConvertedRul
         provider_name=provider_name,
         file_name=file_name,
         payload=payload,
+        policy_group=policy_group,
         is_match_all=is_match_all,
         notes=dedupe_keep_order(notes),
         warnings=dedupe_keep_order(warnings),
     )
+
+
+def collect_custom_policy_groups(rules: list[ConvertedRule], builtins: set[str]) -> list[str]:
+    """收集由 `custom_routing_rules.policyGroup` 声明的扩展分组。
+
+    仅返回“非内置分组且非 direct/proxy/block 别名”的名称，保持首次出现顺序。
+    """
+
+    custom_groups: list[str] = []
+    seen: set[str] = set()
+    alias_keys = {"direct", "proxy", "block"}
+    for rule in rules:
+        if not rule.policy_group:
+            continue
+        group_name = rule.policy_group.strip()
+        if not group_name:
+            continue
+        if group_name in builtins:
+            continue
+        if group_name.lower() in alias_keys:
+            continue
+        if group_name in seen:
+            continue
+        seen.add(group_name)
+        custom_groups.append(group_name)
+    return custom_groups
+
+
+def resolve_policy_group(
+    rule: ConvertedRule,
+    proxy_group: str,
+    direct_group: str,
+    block_group: str,
+) -> str:
+    """解析单条规则最终映射到的策略组名。"""
+
+    alias_map = {
+        "proxy": proxy_group,
+        "direct": direct_group,
+        "block": block_group,
+    }
+
+    if rule.policy_group:
+        group_name = rule.policy_group.strip()
+        if group_name:
+            mapped = alias_map.get(group_name.lower())
+            return mapped if mapped else group_name
+
+    if rule.outbound == "proxy":
+        return proxy_group
+    if rule.outbound == "block":
+        return block_group
+    return direct_group
 
 
 def write_rule_file(path: Path, rule: ConvertedRule) -> None:
@@ -396,13 +555,8 @@ def write_main_file(
     block_group = "⛔ 强制阻断"
     fallback_group = "🐟 漏网策略"
 
-    def map_policy_group(outbound: str) -> str:
-        # 未识别策略统一回落到直连，避免生成不可用组名导致客户端加载失败。
-        if outbound == "proxy":
-            return proxy_group
-        if outbound == "block":
-            return block_group
-        return direct_group
+    builtin_groups = {proxy_group, auto_group, direct_group, block_group, fallback_group}
+    custom_policy_groups = collect_custom_policy_groups(rules, builtin_groups)
 
     lines: list[str] = []
     lines.append("# 包含“自定义规则 + 默认策略组”的主片段，不含节点与订阅配置。")
@@ -430,6 +584,15 @@ def write_main_file(
     lines.append("    proxies:")
     lines.append("      - REJECT")
     lines.append("      - DIRECT")
+    for group_name in custom_policy_groups:
+        # 扩展分组由 custom_routing_rules 的 policyGroup 声明驱动，避免模板内写死业务分组。
+        lines.append(f"  - name: {group_name}")
+        lines.append("    type: select")
+        lines.append("    proxies:")
+        lines.append(f"      - {proxy_group}")
+        lines.append(f"      - {auto_group}")
+        lines.append(f"      - {direct_group}")
+        lines.append(f"      - {block_group}")
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
     lines.append("    proxies:")
@@ -456,7 +619,7 @@ def write_main_file(
     lines.append("rules:")
     has_terminal_match = False
     for rule in rules:
-        policy_group = map_policy_group(rule.outbound)
+        policy_group = resolve_policy_group(rule, proxy_group, direct_group, block_group)
         lines.append(f"  # {rule.index:02d} {rule.remarks}")
         if rule.is_match_all:
             # MATCH 是终止型规则；只允许保留最后一次启用结果。
@@ -558,6 +721,18 @@ def write_readme(path: Path) -> None:
         "python3 scripts/generate_clash_rules.py --repo novcky/v2rayCustomRoutingList --branch main --github-id 3379345",
         "```",
         "",
+        "使用增强模板（保持规则来源仍为 `custom_routing_rules`）：",
+        "",
+        "```bash",
+        "python3 scripts/generate_clash_rules.py --template-profile boost",
+        "```",
+        "",
+        "启用严格模式（出现 warning 时退出，适合 CI）：",
+        "",
+        "```bash",
+        "python3 scripts/generate_clash_rules.py --strict",
+        "```",
+        "",
         "如需只生成规则片段，不生成订阅站模板：",
         "",
         "```bash",
@@ -582,6 +757,8 @@ def write_readme(path: Path) -> None:
         "## 兼容差异",
         "",
         "- `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。",
+        "- 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。",
+        "- `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。",
         "- 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。",
         "- 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。",
         "- `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。",
@@ -590,49 +767,12 @@ def write_readme(path: Path) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def write_subscription_template(
-    path: Path,
-    rules: list[ConvertedRule],
-    repo: str,
-    branch: str,
-    interval: int,
-    github_id: str,
-) -> None:
-    """生成订阅站 fake-ip 模板。
+def append_template_dns(lines: list[str], template_profile: str) -> None:
+    """写入订阅模板 DNS 段。
 
-    模板与主片段共享同一套规则语义，但包含订阅站占位符与更完整的 DNS 基础段。
+    `boost` 在兼容基线上追加增强项，避免因为默认强开新特性导致旧内核加载失败。
     """
 
-    # 参数保留：模板当前不直接拼 icon URL，保留签名便于后续无破坏扩展。
-    _ = github_id
-    # 模板默认使用固定分组名，确保订阅站渲染前后命名稳定，不影响规则引用。
-    proxy_group = "🚀 手动选择"
-    auto_group = "♻️ 自动选择"
-    direct_group = "🎯 全球直连"
-    block_group = "⛔ 强制阻断"
-    fallback_group = "🐟 漏网策略"
-
-    def map_policy_group(outbound: str) -> str:
-        # 与主片段保持相同映射策略，避免模板与本地规则行为分叉。
-        if outbound == "proxy":
-            return proxy_group
-        if outbound == "block":
-            return block_group
-        return direct_group
-
-    lines: list[str] = []
-    lines.append("# 订阅站模板：由 scripts/generate_clash_rules.py 自动生成。")
-    lines.append("# 说明：")
-    lines.append("# 1) `__PROXY_PROVIDERS__` 与 `__PROXY_NODES__` 由订阅站在渲染阶段替换。")
-    lines.append("# 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。")
-    lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。")
-    lines.append("")
-    lines.append("port: 7890")
-    lines.append("socks-port: 7891")
-    lines.append("allow-lan: true")
-    lines.append("mode: rule")
-    lines.append("log-level: info")
-    lines.append("external-controller: 127.0.0.1:9090")
     lines.append("dns:")
     lines.append("  enable: true")
     lines.append("  ipv6: true")
@@ -651,6 +791,102 @@ def write_subscription_template(
     lines.append("    geosite:geolocation-!cn:")
     lines.append("      - https://dns.cloudflare.com/dns-query")
     lines.append("      - https://dns.google/dns-query")
+
+    if template_profile != "boost":
+        return
+
+    lines.append("  listen: 127.0.0.1:5335")
+    lines.append("  use-system-hosts: false")
+    lines.append("  fake-ip-range: 198.18.0.1/16")
+    lines.append("  default-nameserver:")
+    lines.append("    - 223.5.5.5")
+    lines.append("    - 119.29.29.29")
+    lines.append("    - 1.1.1.1")
+    lines.append("    - 8.8.8.8")
+    lines.append("  fallback:")
+    lines.append("    - https://dns.google/dns-query")
+    lines.append("    - https://cloudflare-dns.com/dns-query")
+    lines.append("  fallback-filter:")
+    lines.append("    geoip: true")
+    lines.append("    ipcidr:")
+    lines.append("      - 240.0.0.0/4")
+    lines.append("      - 0.0.0.0/32")
+    lines.append("      - 127.0.0.1/32")
+    lines.append("    domain:")
+    lines.append("      - +.google.com")
+    lines.append("      - +.googleapis.com")
+    lines.append("      - +.gvt1.com")
+    lines.append("      - +.youtube.com")
+    lines.append("  fake-ip-filter:")
+    lines.append("    - *.lan")
+    lines.append("    - localhost")
+    lines.append("    - time.windows.com")
+    lines.append("    - time.apple.com")
+    lines.append("    - time.google.com")
+
+
+def append_template_runtime(lines: list[str], template_profile: str) -> None:
+    """写入订阅模板运行时增强配置。"""
+
+    if template_profile != "boost":
+        return
+
+    lines.append("unified-delay: true")
+    lines.append("tcp-concurrent: true")
+    lines.append("find-process-mode: strict")
+    lines.append("sniffer:")
+    lines.append("  enable: true")
+    lines.append("  parse-pure-ip: true")
+    lines.append("  sniff:")
+    lines.append("    TLS: {ports: [443, 8443]}")
+    lines.append("    HTTP: {ports: [80, 8080-8880], override-destination: true}")
+    lines.append("    QUIC: {ports: [443, 8443]}")
+    lines.append("geodata-mode: true")
+    lines.append("geo-auto-update: true")
+    lines.append("geo-update-interval: 24")
+
+
+def write_subscription_template(
+    path: Path,
+    rules: list[ConvertedRule],
+    repo: str,
+    branch: str,
+    interval: int,
+    github_id: str,
+    template_profile: str,
+) -> None:
+    """生成订阅站 fake-ip 模板。
+
+    模板与主片段共享同一套规则语义，但包含订阅站占位符与更完整的 DNS 基础段。
+    """
+
+    # 参数保留：模板当前不直接拼 icon URL，保留签名便于后续无破坏扩展。
+    _ = github_id
+    # 模板默认使用固定分组名，确保订阅站渲染前后命名稳定，不影响规则引用。
+    proxy_group = "🚀 手动选择"
+    auto_group = "♻️ 自动选择"
+    direct_group = "🎯 全球直连"
+    block_group = "⛔ 强制阻断"
+    fallback_group = "🐟 漏网策略"
+    builtin_groups = {proxy_group, auto_group, direct_group, block_group, fallback_group}
+    custom_policy_groups = collect_custom_policy_groups(rules, builtin_groups)
+
+    lines: list[str] = []
+    lines.append("# 订阅站模板：由 scripts/generate_clash_rules.py 自动生成。")
+    lines.append("# 说明：")
+    lines.append("# 1) `__PROXY_PROVIDERS__` 与 `__PROXY_NODES__` 由订阅站在渲染阶段替换。")
+    lines.append("# 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。")
+    lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。")
+    lines.append(f"# 4) 当前模板档位：{template_profile}。")
+    lines.append("")
+    lines.append("port: 7890")
+    lines.append("socks-port: 7891")
+    lines.append("allow-lan: true")
+    lines.append("mode: rule")
+    lines.append("log-level: info")
+    append_template_runtime(lines, template_profile)
+    lines.append("external-controller: 127.0.0.1:9090")
+    append_template_dns(lines, template_profile)
     lines.append("proxies: null")
     lines.append("proxy-groups:")
     lines.append(f"  - name: {proxy_group}")
@@ -682,6 +918,20 @@ def write_subscription_template(
     lines.append("    proxies:")
     lines.append("      - REJECT")
     lines.append("      - DIRECT")
+    for group_name in custom_policy_groups:
+        # 扩展分组由 custom_routing_rules 的 policyGroup 声明驱动，避免模板内写死业务分组。
+        lines.append(f"  - name: {group_name}")
+        lines.append("    type: select")
+        lines.append("    include-all: true")
+        lines.append("    include-all-proxies: true")
+        lines.append("    include-all-providers: true")
+        lines.append("    proxies:")
+        lines.append(f"      - {proxy_group}")
+        lines.append(f"      - {auto_group}")
+        lines.append(f"      - {direct_group}")
+        lines.append(f"      - {block_group}")
+        lines.append("      - __PROXY_PROVIDERS__")
+        lines.append("      - __PROXY_NODES__")
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
     lines.append("    include-all: true")
@@ -696,6 +946,7 @@ def write_subscription_template(
     lines.append("rules:")
     has_terminal_match = False
     for rule in rules:
+        policy_group = resolve_policy_group(rule, proxy_group, direct_group, block_group)
         lines.append(f"  # {rule.index:02d} {rule.remarks}")
         if rule.is_match_all:
             if not rule.enabled:
@@ -707,11 +958,9 @@ def write_subscription_template(
             continue
         if not rule.enabled:
             lines.append("  # 原规则 enabled=false，默认保持禁用。")
-            lines.append(
-                f"  # - RULE-SET,{rule.provider_name},{map_policy_group(rule.outbound)}"
-            )
+            lines.append(f"  # - RULE-SET,{rule.provider_name},{policy_group}")
             continue
-        lines.append(f"  - RULE-SET,{rule.provider_name},{map_policy_group(rule.outbound)}")
+        lines.append(f"  - RULE-SET,{rule.provider_name},{policy_group}")
     if not has_terminal_match:
         lines.append(f"  - MATCH,{fallback_group}")
     # 模板中的 provider 路径使用 `./providers/custom/`，与常见订阅站目录结构兼容。
@@ -742,7 +991,11 @@ def cleanup_generated_rule_files(rules_dir: Path) -> None:
     pattern = re.compile(r"^\d{2}-.+\.ya?ml$")
     for file_path in rules_dir.glob("*.y*ml"):
         if pattern.match(file_path.name):
-            file_path.unlink()
+            try:
+                file_path.unlink()
+            except FileNotFoundError:
+                # 并发生成时文件可能已被另一进程删掉，这里按“已清理”处理即可。
+                continue
 
 
 def main() -> int:
@@ -767,23 +1020,36 @@ def main() -> int:
         return 1
 
     source_rules = load_source_rules(input_path)
+    validation_errors, validation_warnings = validate_source_rules(source_rules)
+    if validation_errors:
+        print("[ERROR] 源规则校验失败：", file=sys.stderr)
+        for item in validation_errors:
+            print(f"  - {item}", file=sys.stderr)
+        return 1
+
+    used_slugs: set[str] = set()
+    converted: list[ConvertedRule] = []
+    all_warnings: list[str] = [f"[validate] {item}" for item in validation_warnings]
+
+    for idx, src_rule in enumerate(source_rules, 1):
+        rule = convert_rule(idx, src_rule, used_slugs)
+        converted.append(rule)
+        for warning in rule.warnings:
+            all_warnings.append(f"#{idx:02d} {rule.remarks}: {warning}")
+
+    if args.strict and all_warnings:
+        print("[ERROR] strict 模式命中 warning，已终止生成：", file=sys.stderr)
+        for item in all_warnings:
+            print(f"  - {item}", file=sys.stderr)
+        return 2
 
     rules_dir = output_dir / "rules"
     rules_dir.mkdir(parents=True, exist_ok=True)
     # 先删后写可避免重命名后留下“旧 provider 文件”被误引用。
     cleanup_generated_rule_files(rules_dir)
-
-    used_slugs: set[str] = set()
-    converted: list[ConvertedRule] = []
-    all_warnings: list[str] = []
-
-    for idx, src_rule in enumerate(source_rules, 1):
-        rule = convert_rule(idx, src_rule, used_slugs)
-        converted.append(rule)
+    for rule in converted:
         if rule.enabled and not rule.is_match_all:
             write_rule_file(rules_dir / rule.file_name, rule)
-        for warning in rule.warnings:
-            all_warnings.append(f"#{idx:02d} {rule.remarks}: {warning}")
 
     write_main_file(
         path=output_dir / "mihomo-custom-rules.yaml",
@@ -801,6 +1067,7 @@ def main() -> int:
             branch=args.branch,
             interval=args.interval,
             github_id=args.github_id,
+            template_profile=args.template_profile,
         )
     write_proxy_group_example(output_dir / "proxy-groups-custom.example.yaml", args.github_id)
     write_geox_url_snippet(output_dir / "geox-url-v2ray-rules-dat.yaml")
