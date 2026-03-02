@@ -54,6 +54,7 @@ python3 scripts/generate_clash_rules.py --strict
 
 详细接入说明见：[clash/README.md](clash/README.md)
 维护与发布流程见：[docs/maintenance.md](docs/maintenance.md)
+故障样本模板见：[docs/incident-template.md](docs/incident-template.md)
 
 ## 参考文件说明
 
