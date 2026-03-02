@@ -29,6 +29,36 @@ dns:
     geosite:geolocation-!cn:
       - https://dns.cloudflare.com/dns-query
       - https://dns.google/dns-query
+  fake-ip-filter:
+    - "localhost"
+    - "*.localhost"
+    - "*.local"
+    - "*.localdomain"
+    - "*.lan"
+    - "*.home.arpa"
+    - "*.internal"
+    - "*.test"
+    - "host.docker.internal"
+    - "gateway.docker.internal"
+    - "*.docker.internal"
+    - "kubernetes.default.svc"
+    - "*.svc"
+    - "*.svc.cluster.local"
+    - "*.in-addr.arpa"
+    - "*.ip6.arpa"
+    - "wpad"
+    - "stun.*.*.*"
+    - "stun.*.*"
+    - "pool.ntp.org"
+    - "*.ntp.org"
+    - "*.ntp.org.cn"
+    - "time.windows.com"
+    - "time.apple.com"
+    - "*.time.apple.com"
+    - "time.google.com"
+    - "*.time.google.com"
+    - "*.msftconnecttest.com"
+    - "*.msftncsi.com"
 proxies: null
 proxy-groups:
   - name: 🚀 手动选择

@@ -50,6 +50,8 @@ python3 scripts/generate_clash_rules.py --no-template
 - `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。
 - 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。
 - `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。
+- fake-ip 基线按“常见本地访问方式可用”设计，不预设外部代理环境为项目前提。
+- 模板默认内置面向开发环境的 fake-ip-filter 基线，可在客户端按项目继续增量追加。
 - 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。
 - 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。
 - `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。

@@ -44,6 +44,40 @@ PROTOCOL_FALLBACK_MAP = {
     "bittorrent": "GEOSITE,category-pt",
 }
 
+# fake-ip 过滤基线：覆盖开发机常见的本地域名、容器互联域名与基础系统探测域名。
+# 这份基线不追求“一次性全覆盖”，而是降低默认故障率，并给后续增量维护提供稳定起点。
+FAKE_IP_FILTER_BASELINE = [
+    "localhost",
+    "*.localhost",
+    "*.local",
+    "*.localdomain",
+    "*.lan",
+    "*.home.arpa",
+    "*.internal",
+    "*.test",
+    "host.docker.internal",
+    "gateway.docker.internal",
+    "*.docker.internal",
+    "kubernetes.default.svc",
+    "*.svc",
+    "*.svc.cluster.local",
+    "*.in-addr.arpa",
+    "*.ip6.arpa",
+    "wpad",
+    "stun.*.*.*",
+    "stun.*.*",
+    "pool.ntp.org",
+    "*.ntp.org",
+    "*.ntp.org.cn",
+    "time.windows.com",
+    "time.apple.com",
+    "*.time.apple.com",
+    "time.google.com",
+    "*.time.google.com",
+    "*.msftconnecttest.com",
+    "*.msftncsi.com",
+]
+
 
 @dataclass
 class ConvertedRule:
@@ -759,6 +793,8 @@ def write_readme(path: Path) -> None:
         "- `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。",
         "- 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。",
         "- `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。",
+        "- fake-ip 基线按“常见本地访问方式可用”设计，不预设外部代理环境为项目前提。",
+        "- 模板默认内置面向开发环境的 fake-ip-filter 基线，可在客户端按项目继续增量追加。",
         "- 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。",
         "- 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。",
         "- `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。",
@@ -791,6 +827,10 @@ def append_template_dns(lines: list[str], template_profile: str) -> None:
     lines.append("    geosite:geolocation-!cn:")
     lines.append("      - https://dns.cloudflare.com/dns-query")
     lines.append("      - https://dns.google/dns-query")
+    lines.append("  fake-ip-filter:")
+    for item in FAKE_IP_FILTER_BASELINE:
+        # 使用双引号输出，避免通配符被 YAML 解析为 alias 语义。
+        lines.append(f'    - "{item}"')
 
     if template_profile != "boost":
         return
@@ -817,12 +857,6 @@ def append_template_dns(lines: list[str], template_profile: str) -> None:
     lines.append("      - +.googleapis.com")
     lines.append("      - +.gvt1.com")
     lines.append("      - +.youtube.com")
-    lines.append("  fake-ip-filter:")
-    lines.append("    - *.lan")
-    lines.append("    - localhost")
-    lines.append("    - time.windows.com")
-    lines.append("    - time.apple.com")
-    lines.append("    - time.google.com")
 
 
 def append_template_runtime(lines: list[str], template_profile: str) -> None:
