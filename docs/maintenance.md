@@ -24,3 +24,20 @@
 - `git status --short` 仅包含预期文件。
 - `clash/rules/` 无多余历史残留文件。
 - `clash/template.fake-ip.yaml` 与 `custom_routing_rules` 语义一致。
+
+## 5. 版本发布清单
+
+1. 代码与产物一致：
+执行 `bash scripts/check.sh`，并确认 `git status --short` 为空。
+
+2. 变更可追溯：
+确认 commit message 明确且范围单一，并记录影响文件与验证结果。
+
+3. 文档同步：
+若有行为变化，更新 `README.md` / `clash/README.md` / `docs/maintenance.md`；如属排障增量，可补故障样本记录。
+
+4. 打版本标签：
+执行 `git tag -a vX.Y.Z -m \"vX.Y.Z\"`，再用 `git show -s --format='%H %s' vX.Y.Z` 校验指向提交。
+
+5. 推送发布：
+执行 `git push origin main --tags`，并确认远端已可见对应 tag 与提交。
