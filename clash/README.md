@@ -6,6 +6,12 @@
 python3 scripts/generate_clash_rules.py
 ```
 
+建议在提交前统一执行：
+
+```bash
+bash scripts/check.sh
+```
+
 可选参数示例：
 
 ```bash

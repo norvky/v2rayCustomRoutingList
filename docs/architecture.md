@@ -10,7 +10,7 @@
 
 ### Engine 层
 
-- 文件：`scripts/generate_clash_rules.py`
+- 文件：`scripts/generate_clash_rules.py`、`scripts/rulegen/*.py`
 - 职责：校验源规则、转换协议语义、渲染输出模板与规则文件。
 - 约束：生成逻辑必须可重复执行；同一输入应得到稳定输出。
 
@@ -37,3 +37,8 @@
 2. 执行 `python3 -m py_compile scripts/generate_clash_rules.py`。
 3. 执行 `python3 scripts/generate_clash_rules.py` 刷新产物。
 4. 检查 `git diff`，确认仅包含预期改动后再提交。
+
+## 4. 验证入口
+
+- 本地统一检查命令：`bash scripts/check.sh`
+- CI 与本地检查保持同一入口，避免“本地通过、CI 失败”的脚本漂移。

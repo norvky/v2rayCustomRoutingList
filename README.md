@@ -19,6 +19,7 @@
 ```bash
 python3 -m py_compile scripts/generate_clash_rules.py
 python3 scripts/generate_clash_rules.py
+bash scripts/check.sh
 ```
 
 可选参数示例：
@@ -34,10 +35,14 @@ python3 scripts/generate_clash_rules.py --strict
 .
 ├── custom_routing_rules          # 唯一输入源
 ├── scripts/
-│   └── generate_clash_rules.py   # 规则生成器
+│   ├── generate_clash_rules.py   # 规则生成入口（兼容旧命令）
+│   ├── rulegen/                  # 生成器核心模块
+│   └── check.sh                  # 一键检查脚本
 ├── clash/                        # 生成产物与接入说明
 ├── config-references/            # 外部参考样例（不参与运行）
 ├── docs/                         # 项目结构与维护文档
+├── tests/                        # 回归测试
+├── .github/workflows/            # CI 工作流
 └── AGENTS.md                     # 协作与提交约束
 ```
 
@@ -48,6 +53,7 @@ python3 scripts/generate_clash_rules.py --strict
 - `clash/rules/*.yaml`：按源规则拆分后的 rule-provider 文件。
 
 详细接入说明见：[clash/README.md](clash/README.md)
+维护与发布流程见：[docs/maintenance.md](docs/maintenance.md)
 
 ## 参考文件说明
 
