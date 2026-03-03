@@ -34,6 +34,10 @@ payload:
   - DOMAIN-SUFFIX,freestyle.cc.cd
   - DOMAIN-SUFFIX,frostsky.com
   - DOMAIN-SUFFIX,gisinternals.com
+  - DOMAIN-SUFFIX,google.com
+  - DOMAIN-SUFFIX,googleapis.com
+  - DOMAIN-SUFFIX,googleusercontent.com
+  - DOMAIN-SUFFIX,gstatic.com
   - DOMAIN-SUFFIX,greasyfork.org
   - DOMAIN-SUFFIX,gying.net
   - DOMAIN-SUFFIX,icons8.com
