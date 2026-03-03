@@ -32,18 +32,6 @@ dns:
     geosite:geolocation-!cn:
       - https://dns.cloudflare.com/dns-query
       - https://dns.google/dns-query
-    "+.google.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.googleapis.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.googleusercontent.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
-    "+.gstatic.com":
-      - https://dns.cloudflare.com/dns-query
-      - https://dns.google/dns-query
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
@@ -59,8 +47,6 @@ dns:
     domain:
       - +.google.com
       - +.googleapis.com
-      - +.googleusercontent.com
-      - +.gstatic.com
       - +.gvt1.com
       - +.youtube.com
   fake-ip-filter:
