@@ -292,22 +292,10 @@ def append_template_dns(lines: list[str], template_profile: str) -> None:
     lines.append("    geosite:geolocation-!cn:")
     lines.append("      - https://dns.cloudflare.com/dns-query")
     lines.append("      - https://dns.google/dns-query")
-    lines.append("  fake-ip-filter:")
-    for item in FAKE_IP_FILTER_BASELINE:
-        # 使用双引号输出，避免通配符被 YAML 解析为 alias 语义。
-        lines.append(f'    - "{item}"')
-
-    if template_profile != "boost":
-        return
-
-    lines.append("  listen: 127.0.0.1:5335")
-    lines.append("  use-system-hosts: false")
-    lines.append("  fake-ip-range: 198.18.0.1/16")
+    # 在 compat 基线也保留 DNS 容错：兜底直连场景下可降低异常解析导致的连通性抖动。
     lines.append("  default-nameserver:")
     lines.append("    - 223.5.5.5")
     lines.append("    - 119.29.29.29")
-    lines.append("    - 1.1.1.1")
-    lines.append("    - 8.8.8.8")
     lines.append("  fallback:")
     lines.append("    - https://dns.google/dns-query")
     lines.append("    - https://cloudflare-dns.com/dns-query")
@@ -322,6 +310,17 @@ def append_template_dns(lines: list[str], template_profile: str) -> None:
     lines.append("      - +.googleapis.com")
     lines.append("      - +.gvt1.com")
     lines.append("      - +.youtube.com")
+    lines.append("  fake-ip-filter:")
+    for item in FAKE_IP_FILTER_BASELINE:
+        # 使用双引号输出，避免通配符被 YAML 解析为 alias 语义。
+        lines.append(f'    - "{item}"')
+
+    if template_profile != "boost":
+        return
+
+    lines.append("  listen: 127.0.0.1:5335")
+    lines.append("  use-system-hosts: false")
+    lines.append("  fake-ip-range: 198.18.0.1/16")
 
 
 def append_template_runtime(lines: list[str], template_profile: str) -> None:

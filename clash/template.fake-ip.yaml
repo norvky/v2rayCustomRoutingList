@@ -32,6 +32,23 @@ dns:
     geosite:geolocation-!cn:
       - https://dns.cloudflare.com/dns-query
       - https://dns.google/dns-query
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  fallback:
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
+  fallback-filter:
+    geoip: true
+    ipcidr:
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+      - 127.0.0.1/32
+    domain:
+      - +.google.com
+      - +.googleapis.com
+      - +.gvt1.com
+      - +.youtube.com
   fake-ip-filter:
     - "localhost"
     - "*.localhost"
