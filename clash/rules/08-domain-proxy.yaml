@@ -34,9 +34,13 @@ payload:
   - DOMAIN-SUFFIX,freestyle.cc.cd
   - DOMAIN-SUFFIX,frostsky.com
   - DOMAIN-SUFFIX,gisinternals.com
+  - DOMAIN-SUFFIX,g.co
+  - DOMAIN-SUFFIX,ggpht.com
+  - DOMAIN-SUFFIX,google
   - DOMAIN-SUFFIX,google.com
   - DOMAIN-SUFFIX,googleapis.com
   - DOMAIN-SUFFIX,googleusercontent.com
+  - DOMAIN-SUFFIX,googlevideo.com
   - DOMAIN-SUFFIX,gstatic.com
   - DOMAIN-SUFFIX,greasyfork.org
   - DOMAIN-SUFFIX,gying.net
@@ -86,6 +90,7 @@ payload:
   - DOMAIN-SUFFIX,xiaoxintv.net
   - DOMAIN-SUFFIX,xicons.org
   - DOMAIN-SUFFIX,xrea.com
+  - DOMAIN-SUFFIX,withgoogle.com
   - DOMAIN-SUFFIX,zeabur.com
   - DOMAIN,ipv6.msftconnecttest.com
   - DOMAIN,material-web.dev

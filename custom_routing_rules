@@ -157,9 +157,13 @@
       "domain:freestyle.cc.cd",
       "domain:frostsky.com",
       "domain:gisinternals.com",
+      "domain:g.co",
+      "domain:ggpht.com",
+      "domain:google",
       "domain:google.com",
       "domain:googleapis.com",
       "domain:googleusercontent.com",
+      "domain:googlevideo.com",
       "domain:gstatic.com",
       "domain:greasyfork.org",
       "domain:gying.net",
@@ -209,6 +213,7 @@
       "domain:xiaoxintv.net",
       "domain:xicons.org",
       "domain:xrea.com",
+      "domain:withgoogle.com",
       "domain:zeabur.com",
       "ipv6.msftconnecttest.com",
       "material-web.dev",
@@ -267,7 +272,8 @@
     "domain": [
       "geosite:gfw",
       "geosite:greatfire",
-      "geosite:tld-!cn"
+      "geosite:tld-!cn",
+      "geosite:google"
     ],
     "enabled": true
   },
