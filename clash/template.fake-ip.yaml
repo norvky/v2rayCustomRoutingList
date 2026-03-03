@@ -5,11 +5,14 @@
 # 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。
 # 4) 当前模板档位：compat。
 
-port: 7890
-socks-port: 7891
+mixed-port: 7897
 allow-lan: true
 mode: rule
 log-level: info
+unified-delay: true
+tcp-concurrent: true
+find-process-mode: strict
+global-client-fingerprint: chrome
 external-controller: 127.0.0.1:9090
 dns:
   enable: true

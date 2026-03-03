@@ -330,9 +330,6 @@ def append_template_runtime(lines: list[str], template_profile: str) -> None:
     if template_profile != "boost":
         return
 
-    lines.append("unified-delay: true")
-    lines.append("tcp-concurrent: true")
-    lines.append("find-process-mode: strict")
     lines.append("sniffer:")
     lines.append("  enable: true")
     lines.append("  parse-pure-ip: true")
@@ -378,11 +375,14 @@ def write_subscription_template(
     lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。")
     lines.append(f"# 4) 当前模板档位：{template_profile}。")
     lines.append("")
-    lines.append("port: 7890")
-    lines.append("socks-port: 7891")
+    lines.append("mixed-port: 7897")
     lines.append("allow-lan: true")
     lines.append("mode: rule")
     lines.append("log-level: info")
+    lines.append("unified-delay: true")
+    lines.append("tcp-concurrent: true")
+    lines.append("find-process-mode: strict")
+    lines.append("global-client-fingerprint: chrome")
     append_template_runtime(lines, template_profile)
     lines.append("external-controller: 127.0.0.1:9090")
     append_template_dns(lines, template_profile)
