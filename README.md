@@ -10,7 +10,8 @@
 
 ## 固定原则
 
-- 单策略：仅维护 `fake-ip`，不维护 `redir-host` 双轨配置。
+- 默认模板使用 `redir-host`，且“漏网策略”默认首选代理；如需兼容旧行为，可通过参数生成 `fake-ip` 模板。
+- DNS 上游默认使用 `compat` 形态；如需尽量避免域名型上游，可通过 `--template-dns-upstream pure-ip` 生成纯 IP 模板。
 - 正常环境默认：不把外部异常场景（例如默认有代理环境）写成项目默认前提。
 - 职责边界清晰：仓库只保证可控范围内的规则生成与模板一致性。
 
@@ -26,6 +27,8 @@ bash scripts/check.sh
 
 ```bash
 python3 scripts/generate_clash_rules.py --template-profile boost
+python3 scripts/generate_clash_rules.py --template-file template.custom.yaml --template-dns-mode fake-ip
+python3 scripts/generate_clash_rules.py --template-file template.pure-ip.yaml --template-dns-upstream pure-ip
 python3 scripts/generate_clash_rules.py --strict
 ```
 
@@ -49,7 +52,8 @@ python3 scripts/generate_clash_rules.py --strict
 ## 输出说明
 
 - `clash/mihomo-custom-rules.yaml`：可并入主配置的规则主片段。
-- `clash/template.fake-ip.yaml`：订阅站模板（含占位符）。
+- `clash/template.redir-host.yaml`：默认推荐的订阅站模板（含占位符）。
+- `clash/template.fake-ip.yaml`：默认一并保留的兼容模板。
 - `clash/rules/*.yaml`：按源规则拆分后的 rule-provider 文件。
 
 详细接入说明见：[clash/README.md](clash/README.md)

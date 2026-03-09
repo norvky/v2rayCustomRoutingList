@@ -24,6 +24,18 @@ python3 scripts/generate_clash_rules.py --repo novcky/v2rayCustomRoutingList --b
 python3 scripts/generate_clash_rules.py --template-profile boost
 ```
 
+如需生成兼容旧行为的 fake-ip 模板：
+
+```bash
+python3 scripts/generate_clash_rules.py --template-file template.custom.yaml --template-dns-mode fake-ip
+```
+
+如需尽量避免域名型 DNS 上游，可生成纯 IP 版本：
+
+```bash
+python3 scripts/generate_clash_rules.py --template-file template.pure-ip.yaml --template-dns-upstream pure-ip
+```
+
 启用严格模式（出现 warning 时退出，适合 CI）：
 
 ```bash
@@ -40,7 +52,8 @@ python3 scripts/generate_clash_rules.py --no-template
 
 - `rules/*.yaml`：按 `custom_routing_rules` 顺序拆分后的 rule-provider 文件。
 - `mihomo-custom-rules.yaml`：主片段，包含 `proxy-groups`、`rule-providers` 与 `rules`。
-- `template.fake-ip.yaml`：可用于订阅站渲染的模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。
+- `template.redir-host.yaml`：默认推荐的订阅站模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。
+- `template.fake-ip.yaml`：默认一并保留的兼容模板，便于在客户端按需切换。
 - `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组）。
 - `geox-url-v2ray-rules-dat.yaml`：可选 GEO 数据源片段。
 
@@ -56,9 +69,13 @@ python3 scripts/generate_clash_rules.py --no-template
 - `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。
 - 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。
 - `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。
-- fake-ip 基线按“常见本地访问方式可用”设计，不预设外部代理环境为项目前提。
-- 模板默认内置面向开发环境的 fake-ip-filter 基线，可在客户端按项目继续增量追加。
+- 默认模板使用 `redir-host`，降低开发机场景下的真实地址联调成本。
+- 默认同时生成 redir-host / fake-ip 两份标准模板，避免仓库在常规重生成时出现无意义的增删漂移。
+- `fake-ip` 模式会恢复旧版 `fake-ip-filter` 基线；如需单独导出，可配合 `--template-file` 与 `--template-dns-mode` 使用。
+- `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。
+- DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。
+- 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。
 - 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。
-- 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。
+- 订阅站模板中，末尾 `MATCH` 固定指向“漏网策略”组，且该组默认首选代理，便于按需切换直连/代理。
 - `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。
 - remarks 写“拦截”但 outboundTag 为 `direct` 的条目，会按真实行为映射为 `direct`。

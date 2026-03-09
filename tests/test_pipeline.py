@@ -14,62 +14,142 @@ SCRIPT = ROOT / "scripts" / "generate_clash_rules.py"
 
 
 class PipelineTests(unittest.TestCase):
-    def test_generate_with_absolute_paths(self) -> None:
+    def write_source_rules(self, source: Path) -> None:
+        """写入最小可运行的源规则样本。"""
+
+        source.write_text(
+            json.dumps(
+                [
+                    {
+                        "remarks": "域名_直连",
+                        "enabled": True,
+                        "outboundTag": "direct",
+                        "domain": ["domain:example.com"],
+                    },
+                    {
+                        "remarks": "端口_全部_直连",
+                        "enabled": True,
+                        "outboundTag": "direct",
+                        "port": "0-65535",
+                        "domain": [],
+                        "ip": [],
+                        "protocol": [],
+                    },
+                ],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+    def run_generator(self, source: Path, out: Path, *extra_args: str) -> subprocess.CompletedProcess[str]:
+        """执行生成脚本并返回结果。"""
+
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--input",
+                str(source),
+                "--output-dir",
+                str(out),
+                "--repo",
+                "owner/repo",
+                "--branch",
+                "main",
+                *extra_args,
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_generate_standard_templates_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             source = tmp_path / "custom_routing_rules.json"
             out = tmp_path / "out"
-            source.write_text(
-                json.dumps(
-                    [
-                        {
-                            "remarks": "域名_直连",
-                            "enabled": True,
-                            "outboundTag": "direct",
-                            "domain": ["domain:example.com"],
-                        },
-                        {
-                            "remarks": "端口_全部_直连",
-                            "enabled": True,
-                            "outboundTag": "direct",
-                            "port": "0-65535",
-                            "domain": [],
-                            "ip": [],
-                            "protocol": [],
-                        },
-                    ],
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
+            self.write_source_rules(source)
 
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(SCRIPT),
-                    "--input",
-                    str(source),
-                    "--output-dir",
-                    str(out),
-                    "--repo",
-                    "owner/repo",
-                    "--branch",
-                    "main",
-                ],
-                cwd=ROOT,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            result = self.run_generator(source, out)
 
             self.assertEqual(result.returncode, 0, msg=result.stderr)
             self.assertTrue((out / "mihomo-custom-rules.yaml").exists())
+            self.assertTrue((out / "template.redir-host.yaml").exists())
             self.assertTrue((out / "template.fake-ip.yaml").exists())
             self.assertTrue((out / "rules" / "01-domain-direct.yaml").exists())
 
             main_text = (out / "mihomo-custom-rules.yaml").read_text(encoding="utf-8")
+            redir_host_text = (out / "template.redir-host.yaml").read_text(encoding="utf-8")
+            fake_ip_text = (out / "template.fake-ip.yaml").read_text(encoding="utf-8")
             self.assertIn("RULE-SET,custom-01-domain-direct,🎯 全球直连", main_text)
             self.assertIn("MATCH,🐟 漏网策略", main_text)
+            self.assertIn("      - 🚀 手动选择\n      - ♻️ 自动选择\n      - 🎯 全球直连", main_text)
+            self.assertIn("enhanced-mode: redir-host", redir_host_text)
+            self.assertIn("force-dns-mapping: true", redir_host_text)
+            self.assertIn("direct-nameserver:", redir_host_text)
+            self.assertIn("direct-nameserver-follow-policy: true", redir_host_text)
+            self.assertIn("https://dns.cloudflare.com/dns-query", redir_host_text)
+            self.assertNotIn("fallback:", redir_host_text)
+            self.assertNotIn("fake-ip-filter", redir_host_text)
+            self.assertIn("enhanced-mode: fake-ip", fake_ip_text)
+            self.assertIn("fake-ip-filter:", fake_ip_text)
+            self.assertIn("https://dns.google/dns-query", fake_ip_text)
+            self.assertNotIn("force-dns-mapping: true", fake_ip_text)
+
+    def test_generate_custom_fake_ip_template_with_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "custom_routing_rules.json"
+            out = tmp_path / "out"
+            self.write_source_rules(source)
+
+            result = self.run_generator(
+                source,
+                out,
+                "--template-file",
+                "template.custom.yaml",
+                "--template-dns-mode",
+                "fake-ip",
+            )
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue((out / "template.custom.yaml").exists())
+            self.assertFalse((out / "template.redir-host.yaml").exists())
+            self.assertFalse((out / "template.fake-ip.yaml").exists())
+
+            template_text = (out / "template.custom.yaml").read_text(encoding="utf-8")
+            self.assertIn("enhanced-mode: fake-ip", template_text)
+            self.assertIn("fake-ip-filter:", template_text)
+            self.assertIn("# 6) 当前 DNS 上游：compat。", template_text)
+            self.assertNotIn("force-dns-mapping: true", template_text)
+
+    def test_generate_custom_pure_ip_template_with_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "custom_routing_rules.json"
+            out = tmp_path / "out"
+            self.write_source_rules(source)
+
+            result = self.run_generator(
+                source,
+                out,
+                "--template-file",
+                "template.pure-ip.yaml",
+                "--template-dns-upstream",
+                "pure-ip",
+            )
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue((out / "template.pure-ip.yaml").exists())
+
+            template_text = (out / "template.pure-ip.yaml").read_text(encoding="utf-8")
+            self.assertIn("enhanced-mode: redir-host", template_text)
+            self.assertIn("# 6) 当前 DNS 上游：pure-ip。", template_text)
+            self.assertIn("  nameserver:\n    - 1.1.1.1\n    - 8.8.8.8", template_text)
+            self.assertIn("  proxy-server-nameserver:\n    - 1.1.1.1\n    - 8.8.8.8", template_text)
+            self.assertIn("  direct-nameserver:\n    - 223.5.5.5\n    - 119.29.29.29", template_text)
+            self.assertNotIn("dns.google/dns-query", template_text)
 
 
 if __name__ == "__main__":

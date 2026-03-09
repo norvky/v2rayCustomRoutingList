@@ -4,7 +4,7 @@
 # 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。
 # 3) 末尾 MATCH 固定使用“漏网策略”组；该组默认首选代理，仍可在客户端切换直连/代理。
 # 4) 当前模板档位：compat。
-# 5) 当前 DNS 模式：fake-ip。
+# 5) 当前 DNS 模式：redir-host。
 # 6) 当前 DNS 上游：compat。
 
 mixed-port: 7897
@@ -15,12 +15,20 @@ unified-delay: true
 tcp-concurrent: true
 find-process-mode: strict
 global-client-fingerprint: chrome
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  sniff:
+    TLS: {ports: [443, 8443]}
+    HTTP: {ports: [80, 8080-8880], override-destination: true}
+    QUIC: {ports: [443, 8443]}
 external-controller: 127.0.0.1:9090
 dns:
   enable: true
   ipv6: true
   respect-rules: true
-  enhanced-mode: fake-ip
+  enhanced-mode: redir-host
   nameserver:
     - https://dns.cloudflare.com/dns-query
     - https://dns.google/dns-query
@@ -38,75 +46,6 @@ dns:
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29
-  fake-ip-filter:
-    - "localhost"
-    - "*.localhost"
-    - "*.local"
-    - "*.localdomain"
-    - "*.lan"
-    - "*.home.arpa"
-    - "*.internal"
-    - "*.test"
-    - "host.docker.internal"
-    - "gateway.docker.internal"
-    - "*.docker.internal"
-    - "kubernetes.default.svc"
-    - "*.svc"
-    - "*.svc.cluster.local"
-    - "*.in-addr.arpa"
-    - "*.ip6.arpa"
-    - "wpad"
-    - "stun.*.*.*"
-    - "stun.*.*"
-    - "*.*.*.srv.nintendo.net"
-    - "*.*.stun.playstation.net"
-    - "*.*.xboxlive.com"
-    - "xbox.*.*.microsoft.com"
-    - "speedtest.cros.wr.pvp.net"
-    - "pool.ntp.org"
-    - "*.ntp.org"
-    - "*.ntp.org.cn"
-    - "*.openwrt.pool.ntp.org"
-    - "ntp.aliyun.com"
-    - "ntp.ubuntu.com"
-    - "ntp1.aliyun.com"
-    - "ntp2.aliyun.com"
-    - "ntp3.aliyun.com"
-    - "ntp4.aliyun.com"
-    - "ntp5.aliyun.com"
-    - "ntp6.aliyun.com"
-    - "ntp7.aliyun.com"
-    - "time.windows.com"
-    - "time.nist.gov"
-    - "time.ustc.edu.cn"
-    - "time1.cloud.tencent.com"
-    - "time.apple.com"
-    - "time.asia.apple.com"
-    - "time1.apple.com"
-    - "time2.apple.com"
-    - "time3.apple.com"
-    - "time4.apple.com"
-    - "time5.apple.com"
-    - "time6.apple.com"
-    - "time7.apple.com"
-    - "*.time.apple.com"
-    - "time1.aliyun.com"
-    - "time2.aliyun.com"
-    - "time3.aliyun.com"
-    - "time4.aliyun.com"
-    - "time5.aliyun.com"
-    - "time6.aliyun.com"
-    - "time7.aliyun.com"
-    - "time.google.com"
-    - "time1.google.com"
-    - "time2.google.com"
-    - "time3.google.com"
-    - "time4.google.com"
-    - "*.time.google.com"
-    - "*.time.edu.cn"
-    - "*.ipv6.microsoft.com"
-    - "*.msftconnecttest.com"
-    - "*.msftncsi.com"
 proxies: null
 proxy-groups:
   - name: 🚀 手动选择

@@ -86,12 +86,14 @@ def write_main_file(
         lines.append(f"      - {auto_group}")
         lines.append(f"      - {direct_group}")
         lines.append(f"      - {block_group}")
+    # 社区里更常见的是让 MATCH 默认落到代理；这里把“漏网策略”首项放在代理侧，
+    # 同时保留直连入口，便于用户按场景切换。
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
     lines.append("    proxies:")
-    lines.append(f"      - {direct_group}")
     lines.append(f"      - {proxy_group}")
     lines.append(f"      - {auto_group}")
+    lines.append(f"      - {direct_group}")
     lines.append("")
     # 先写 provider 声明，便于阅读时先看到“依赖了哪些规则文件”。
     lines.append("rule-providers:")
@@ -226,6 +228,18 @@ def write_readme(path: Path) -> None:
         "python3 scripts/generate_clash_rules.py --template-profile boost",
         "```",
         "",
+        "如需生成兼容旧行为的 fake-ip 模板：",
+        "",
+        "```bash",
+        "python3 scripts/generate_clash_rules.py --template-file template.custom.yaml --template-dns-mode fake-ip",
+        "```",
+        "",
+        "如需尽量避免域名型 DNS 上游，可生成纯 IP 版本：",
+        "",
+        "```bash",
+        "python3 scripts/generate_clash_rules.py --template-file template.pure-ip.yaml --template-dns-upstream pure-ip",
+        "```",
+        "",
         "启用严格模式（出现 warning 时退出，适合 CI）：",
         "",
         "```bash",
@@ -242,7 +256,8 @@ def write_readme(path: Path) -> None:
         "",
         "- `rules/*.yaml`：按 `custom_routing_rules` 顺序拆分后的 rule-provider 文件。",
         "- `mihomo-custom-rules.yaml`：主片段，包含 `proxy-groups`、`rule-providers` 与 `rules`。",
-        "- `template.fake-ip.yaml`：可用于订阅站渲染的模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。",
+        "- `template.redir-host.yaml`：默认推荐的订阅站模板（含 `__PROXY_PROVIDERS__` / `__PROXY_NODES__` 占位符）。",
+        "- `template.fake-ip.yaml`：默认一并保留的兼容模板，便于在客户端按需切换。",
         "- `proxy-groups-custom.example.yaml`：可选分组示例（与模板同名组）。",
         "- `geox-url-v2ray-rules-dat.yaml`：可选 GEO 数据源片段。",
         "",
@@ -258,84 +273,127 @@ def write_readme(path: Path) -> None:
         "- `protocol:bittorrent` 在 Clash 无等价规则，自动降级为 `GEOSITE,category-pt`。",
         "- 规则可选 `policyGroup` 字段可覆盖默认分组映射；未设置时按 outboundTag 映射。",
         "- `--template-profile boost` 仅增强模板运行参数，不引入外部规则文件依赖。",
-        "- fake-ip 基线按“常见本地访问方式可用”设计，不预设外部代理环境为项目前提。",
-        "- 模板默认内置面向开发环境的 fake-ip-filter 基线，可在客户端按项目继续增量追加。",
+        "- 默认模板使用 `redir-host`，降低开发机场景下的真实地址联调成本。",
+        "- 默认同时生成 redir-host / fake-ip 两份标准模板，避免仓库在常规重生成时出现无意义的增删漂移。",
+        "- `fake-ip` 模式会恢复旧版 `fake-ip-filter` 基线；如需单独导出，可配合 `--template-file` 与 `--template-dns-mode` 使用。",
+        "- `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。",
+        "- DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。",
+        "- 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。",
         "- 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。",
-        "- 订阅站模板中，末尾 `MATCH` 默认指向“漏网策略”组，便于在客户端一键切换直连/代理。",
+        "- 订阅站模板中，末尾 `MATCH` 固定指向“漏网策略”组，且该组默认首选代理，便于按需切换直连/代理。",
         "- `enabled=false` 条目不会生成 provider 文件与 provider 声明，仅保留注释方便回滚。",
         "- remarks 写“拦截”但 outboundTag 为 `direct` 的条目，会按真实行为映射为 `direct`。",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def append_template_dns(lines: list[str], template_profile: str) -> None:
+def resolve_template_dns_servers(template_dns_upstream: str) -> tuple[list[str], list[str], list[str], list[str]]:
+    """返回模板使用的 DNS 上游集合。"""
+
+    # 直连规则主要承接 `cn/private` 这类明确本地流量，因此继续使用本地可达的 IP 上游，
+    # 避免把 LAN/内网访问强行送去默认代理侧的公网解析。
+    default_nameserver = ["223.5.5.5", "119.29.29.29"]
+    direct_nameserver = ["223.5.5.5", "119.29.29.29"]
+    # 代理节点域名需要尽量避开本地污染链路，因此默认固定到公共 IP DNS。
+    proxy_server_nameserver = ["1.1.1.1", "8.8.8.8"]
+    if template_dns_upstream == "pure-ip":
+        nameserver = ["1.1.1.1", "8.8.8.8"]
+    else:
+        # 仅在 compat 档保留域名型 DoH；这里依赖 TLS 域名身份，比直接写成 IP 形式的 DoH 更稳妥。
+        nameserver = ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    return nameserver, default_nameserver, direct_nameserver, proxy_server_nameserver
+
+
+def append_template_dns(
+    lines: list[str],
+    template_profile: str,
+    template_dns_mode: str,
+    template_dns_upstream: str,
+) -> None:
     """写入订阅模板 DNS 段。
 
-    `boost` 在兼容基线上追加增强项，避免因为默认强开新特性导致旧内核加载失败。
+    当前模板以“显式直连少数规则 + MATCH 默认代理”为基线：默认 nameserver 走可信公网解析，
+    仅在命中 `cn/private` 这类明确直连规则时回落到 direct-nameserver。
     """
+
+    _ = template_profile
+    nameserver, default_nameserver, direct_nameserver, proxy_server_nameserver = resolve_template_dns_servers(
+        template_dns_upstream
+    )
 
     lines.append("dns:")
     lines.append("  enable: true")
     lines.append("  ipv6: true")
     lines.append("  respect-rules: true")
-    lines.append("  enhanced-mode: fake-ip")
+    lines.append(f"  enhanced-mode: {template_dns_mode}")
     lines.append("  nameserver:")
-    lines.append("    - https://120.53.53.53/dns-query")
-    lines.append("    - https://223.5.5.5/dns-query")
+    for item in nameserver:
+        lines.append(f"    - {item}")
     lines.append("  proxy-server-nameserver:")
-    lines.append("    - https://120.53.53.53/dns-query")
-    lines.append("    - https://223.5.5.5/dns-query")
+    for item in proxy_server_nameserver:
+        lines.append(f"    - {item}")
+    lines.append("  direct-nameserver:")
+    for item in direct_nameserver:
+        lines.append(f"    - {item}")
+    lines.append("  direct-nameserver-follow-policy: true")
     lines.append("  nameserver-policy:")
     lines.append("    geosite:cn,private:")
-    lines.append("      - https://120.53.53.53/dns-query")
-    lines.append("      - https://223.5.5.5/dns-query")
-    lines.append("    geosite:geolocation-!cn:")
-    lines.append("      - https://dns.cloudflare.com/dns-query")
-    lines.append("      - https://dns.google/dns-query")
-    # 在 compat 基线也保留 DNS 容错：兜底直连场景下可降低异常解析导致的连通性抖动。
+    for item in direct_nameserver:
+        lines.append(f"      - {item}")
+    # default-nameserver 只负责解析域名型 DNS 上游本身；保持 IP 形式可避免启动期出现循环依赖。
     lines.append("  default-nameserver:")
-    lines.append("    - 223.5.5.5")
-    lines.append("    - 119.29.29.29")
-    lines.append("  fallback:")
-    lines.append("    - https://dns.google/dns-query")
-    lines.append("    - https://cloudflare-dns.com/dns-query")
-    lines.append("  fallback-filter:")
-    lines.append("    geoip: true")
-    lines.append("    ipcidr:")
-    lines.append("      - 240.0.0.0/4")
-    lines.append("      - 0.0.0.0/32")
-    lines.append("      - 127.0.0.1/32")
-    lines.append("    domain:")
-    lines.append("      - +.google.com")
-    lines.append("      - +.googleapis.com")
-    lines.append("      - +.gvt1.com")
-    lines.append("      - +.youtube.com")
-    lines.append("  fake-ip-filter:")
-    for item in FAKE_IP_FILTER_BASELINE:
-        # 使用双引号输出，避免通配符被 YAML 解析为 alias 语义。
-        lines.append(f'    - "{item}"')
+    for item in default_nameserver:
+        lines.append(f"    - {item}")
+
+    if template_dns_mode == "fake-ip":
+        # 仅在 fake-ip 模式输出过滤基线，避免 redir-host 模式携带无效配置造成理解偏差。
+        lines.append("  fake-ip-filter:")
+        for item in FAKE_IP_FILTER_BASELINE:
+            # 使用双引号输出，避免通配符被 YAML 解析为 alias 语义。
+            lines.append(f'    - "{item}"')
 
     if template_profile != "boost":
         return
 
     lines.append("  listen: 127.0.0.1:5335")
     lines.append("  use-system-hosts: false")
-    lines.append("  fake-ip-range: 198.18.0.1/16")
+    if template_dns_mode == "fake-ip":
+        # fake-ip-range 仅对 fake-ip 生效；保留在 boost 档位可与旧模板行为保持一致。
+        lines.append("  fake-ip-range: 198.18.0.1/16")
 
 
-def append_template_runtime(lines: list[str], template_profile: str) -> None:
-    """写入订阅模板运行时增强配置。"""
-
-    if template_profile != "boost":
-        return
+def append_template_sniffer(lines: list[str], include_force_dns_mapping: bool) -> None:
+    """写入订阅模板 sniffer 段。"""
 
     lines.append("sniffer:")
     lines.append("  enable: true")
+    if include_force_dns_mapping:
+        lines.append("  force-dns-mapping: true")
     lines.append("  parse-pure-ip: true")
     lines.append("  sniff:")
     lines.append("    TLS: {ports: [443, 8443]}")
     lines.append("    HTTP: {ports: [80, 8080-8880], override-destination: true}")
     lines.append("    QUIC: {ports: [443, 8443]}")
+
+
+def append_template_runtime(
+    lines: list[str],
+    template_profile: str,
+    template_dns_mode: str,
+) -> None:
+    """写入订阅模板运行时增强配置。"""
+
+    if template_dns_mode == "redir-host":
+        # redir-host 依赖域名映射与嗅探结果协同工作；这里即使在 compat 档位也保留最小 sniffer 基线，
+        # 以避免用户切到真实 IP 直连场景后，规则侧因为缺失 SNI/Host 信息而退化成仅按目标 IP 决策。
+        append_template_sniffer(lines, include_force_dns_mapping=True)
+    elif template_profile == "boost":
+        # fake-ip 保持旧 boost 行为：仅在增强档位打开 sniff，不改变 compat 档位的历史表现。
+        append_template_sniffer(lines, include_force_dns_mapping=False)
+
+    if template_profile != "boost":
+        return
+
     lines.append("geodata-mode: true")
     lines.append("geo-auto-update: true")
     lines.append("geo-update-interval: 24")
@@ -349,8 +407,10 @@ def write_subscription_template(
     interval: int,
     github_id: str,
     template_profile: str,
+    template_dns_mode: str,
+    template_dns_upstream: str,
 ) -> None:
-    """生成订阅站 fake-ip 模板。
+    """生成订阅站模板。
 
     模板与主片段共享同一套规则语义，但包含订阅站占位符与更完整的 DNS 基础段。
     """
@@ -371,8 +431,10 @@ def write_subscription_template(
     lines.append("# 说明：")
     lines.append("# 1) `__PROXY_PROVIDERS__` 与 `__PROXY_NODES__` 由订阅站在渲染阶段替换。")
     lines.append("# 2) 自定义规则顺序来自 custom_routing_rules，并按原 enabled 状态输出。")
-    lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组，方便在客户端一键切换直连/代理。")
+    lines.append("# 3) 末尾 MATCH 固定使用“漏网策略”组；该组默认首选代理，仍可在客户端切换直连/代理。")
     lines.append(f"# 4) 当前模板档位：{template_profile}。")
+    lines.append(f"# 5) 当前 DNS 模式：{template_dns_mode}。")
+    lines.append(f"# 6) 当前 DNS 上游：{template_dns_upstream}。")
     lines.append("")
     lines.append("mixed-port: 7897")
     lines.append("allow-lan: true")
@@ -382,9 +444,9 @@ def write_subscription_template(
     lines.append("tcp-concurrent: true")
     lines.append("find-process-mode: strict")
     lines.append("global-client-fingerprint: chrome")
-    append_template_runtime(lines, template_profile)
+    append_template_runtime(lines, template_profile, template_dns_mode)
     lines.append("external-controller: 127.0.0.1:9090")
-    append_template_dns(lines, template_profile)
+    append_template_dns(lines, template_profile, template_dns_mode, template_dns_upstream)
     lines.append("proxies: null")
     lines.append("proxy-groups:")
     lines.append(f"  - name: {proxy_group}")
@@ -430,15 +492,16 @@ def write_subscription_template(
         lines.append(f"      - {block_group}")
         lines.append("      - __PROXY_PROVIDERS__")
         lines.append("      - __PROXY_NODES__")
+    # 订阅站模板同样保持 MATCH 默认代理，避免用户导入节点后因为首项是直连而产生预期偏差。
     lines.append(f"  - name: {fallback_group}")
     lines.append("    type: select")
     lines.append("    include-all: true")
     lines.append("    include-all-proxies: true")
     lines.append("    include-all-providers: true")
     lines.append("    proxies:")
-    lines.append(f"      - {direct_group}")
     lines.append(f"      - {proxy_group}")
     lines.append(f"      - {auto_group}")
+    lines.append(f"      - {direct_group}")
     lines.append("      - __PROXY_PROVIDERS__")
     lines.append("      - __PROXY_NODES__")
     lines.append("rules:")

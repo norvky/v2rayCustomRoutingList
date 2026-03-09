@@ -20,6 +20,21 @@ from .render import (
 from .source import infer_repo_slug, load_source_rules, validate_source_rules
 
 
+def resolve_template_targets(template_file: str, template_dns_mode: str) -> list[tuple[str, str]]:
+    """返回需要输出的模板文件列表。"""
+
+    # 默认同时保留 redir-host / fake-ip 两份标准模板，避免日常重生成时因为模式切换导致
+    # 仓库里出现“删除一个模板、再新增另一个模板”的无意义漂移。
+    if not template_file.strip():
+        return [
+            ("template.redir-host.yaml", "redir-host"),
+            ("template.fake-ip.yaml", "fake-ip"),
+        ]
+
+    # 调用方显式指定输出文件时，按所选 DNS 模式只导出这一份，便于临时产出定制模板。
+    return [(template_file.strip(), template_dns_mode)]
+
+
 def main() -> int:
     """脚本主流程：读取源规则 -> 转换 -> 写入各类产物。"""
 
@@ -82,15 +97,21 @@ def main() -> int:
         github_id=args.github_id,
     )
     if not args.no_template:
-        write_subscription_template(
-            path=output_dir / args.template_file,
-            rules=converted,
-            repo=repo,
-            branch=args.branch,
-            interval=args.interval,
-            github_id=args.github_id,
-            template_profile=args.template_profile,
-        )
+        for template_name, template_dns_mode in resolve_template_targets(
+            args.template_file,
+            args.template_dns_mode,
+        ):
+            write_subscription_template(
+                path=output_dir / template_name,
+                rules=converted,
+                repo=repo,
+                branch=args.branch,
+                interval=args.interval,
+                github_id=args.github_id,
+                template_profile=args.template_profile,
+                template_dns_mode=template_dns_mode,
+                template_dns_upstream=args.template_dns_upstream,
+            )
     write_proxy_group_example(output_dir / "proxy-groups-custom.example.yaml", args.github_id)
     write_geox_url_snippet(output_dir / "geox-url-v2ray-rules-dat.yaml")
     write_readme(output_dir / "README.md")

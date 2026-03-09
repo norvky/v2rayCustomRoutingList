@@ -45,8 +45,20 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--template-file",
-        default="template.fake-ip.yaml",
-        help="订阅站模板输出文件名（默认：template.fake-ip.yaml）",
+        default="",
+        help="订阅站模板输出文件名（默认：同时输出标准 redir-host/fake-ip 模板）",
+    )
+    parser.add_argument(
+        "--template-dns-mode",
+        choices=("redir-host", "fake-ip"),
+        default="redir-host",
+        help="订阅站模板 DNS 模式：redir-host(默认)/fake-ip(兼容旧行为)；仅在 --template-file 导出单文件时生效",
+    )
+    parser.add_argument(
+        "--template-dns-upstream",
+        choices=("compat", "pure-ip"),
+        default="compat",
+        help="订阅站模板 DNS 上游形态：compat(默认，nameserver 使用加密域名)/pure-ip(尽量使用纯 IP 上游)",
     )
     parser.add_argument(
         "--no-template",

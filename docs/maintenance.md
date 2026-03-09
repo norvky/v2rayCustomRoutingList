@@ -23,7 +23,7 @@
 
 - `git status --short` 仅包含预期文件。
 - `clash/rules/` 无多余历史残留文件。
-- `clash/template.fake-ip.yaml` 与 `custom_routing_rules` 语义一致。
+- `clash/template.redir-host.yaml` 与 `clash/template.fake-ip.yaml` 都需与 `custom_routing_rules` 语义一致。
 
 ## 5. 版本发布清单
 
