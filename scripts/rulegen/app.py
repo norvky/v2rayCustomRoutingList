@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 from .cli import parse_args
-from .constants import TEMPLATE_LOCAL_DNS_DOMAINS_FILE, TEMPLATE_LOCAL_DNS_SERVERS_FILE
+from .constants import (
+    LOCAL_DNS_POLICY_BASELINE,
+    TEMPLATE_DISABLE_IPV6_DOMAINS_FILE,
+    TEMPLATE_LOCAL_DNS_DOMAINS_FILE,
+    TEMPLATE_LOCAL_DNS_SERVERS_FILE,
+)
 from .convert import convert_rule
 from .models import ConvertedRule
 from .render import (
@@ -89,6 +94,9 @@ def main() -> int:
 
     template_local_dns_servers = load_optional_template_entries(output_dir / TEMPLATE_LOCAL_DNS_SERVERS_FILE)
     template_local_dns_domains = load_optional_template_entries(output_dir / TEMPLATE_LOCAL_DNS_DOMAINS_FILE)
+    template_disable_ipv6_domains = load_optional_template_entries(
+        output_dir / TEMPLATE_DISABLE_IPV6_DOMAINS_FILE
+    )
 
     used_slugs: set[str] = set()
     converted: list[ConvertedRule] = []
@@ -98,6 +106,17 @@ def main() -> int:
         # 对 home.arpa / 自定义内网域名这类场景通常还不够，因此提前给出可操作提示。
         all_warnings.append(
             f"[template] 检测到 {TEMPLATE_LOCAL_DNS_DOMAINS_FILE}，但未检测到 {TEMPLATE_LOCAL_DNS_SERVERS_FILE}；如需解析局域网自定义域名，请补充客户端可达的本地 DNS 服务器。"
+        )
+    local_dns_policy_domains = set(LOCAL_DNS_POLICY_BASELINE) | set(template_local_dns_domains)
+    duplicated_disable_ipv6_domains = [
+        item for item in template_disable_ipv6_domains if item in local_dns_policy_domains or item == "geosite:cn,private"
+    ]
+    if duplicated_disable_ipv6_domains:
+        # 同一条 nameserver-policy 若同时要求“走本地 DNS”和“禁 AAAA”，最终会互相覆盖；
+        # 这里提前告警，并在渲染阶段优先保留更明确的本地 DNS 语义，避免生成重复 key。
+        duplicated_items = "、".join(duplicated_disable_ipv6_domains)
+        all_warnings.append(
+            f"[template] {TEMPLATE_DISABLE_IPV6_DOMAINS_FILE} 中的 {duplicated_items} 与本地 DNS 直连策略重复；生成时将优先保留 local-dns 侧配置。"
         )
 
     for idx, src_rule in enumerate(source_rules, 1):
@@ -145,6 +164,7 @@ def main() -> int:
                 template_dns_upstream=args.template_dns_upstream,
                 template_local_dns_servers=template_local_dns_servers,
                 template_local_dns_domains=template_local_dns_domains,
+                template_disable_ipv6_domains=template_disable_ipv6_domains,
             )
     write_proxy_group_example(output_dir / "proxy-groups-custom.example.yaml", args.github_id)
     write_geox_url_snippet(output_dir / "geox-url-v2ray-rules-dat.yaml")

@@ -192,5 +192,52 @@ class PipelineTests(unittest.TestCase):
                 "    \"+.corp.internal\":\n      - 192.168.1.1\n      - 172.16.0.53\n      - 223.5.5.5\n      - 119.29.29.29",
                 fake_ip_text,
             )
+
+    def test_merge_disable_ipv6_domains_into_templates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "custom_routing_rules.json"
+            out = tmp_path / "out"
+            self.write_source_rules(source)
+            out.mkdir()
+
+            (out / "template.disable-ipv6-domains.txt").write_text(
+                "# comment\ngemini.google.com\n+.googleapis.com\ngemini.google.com\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_generator(source, out)
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            redir_host_text = (out / "template.redir-host.yaml").read_text(encoding="utf-8")
+            fake_ip_text = (out / "template.fake-ip.yaml").read_text(encoding="utf-8")
+            self.assertIn(
+                '    "gemini.google.com":\n      - https://dns.cloudflare.com/dns-query#disable-ipv6=true\n      - https://dns.google/dns-query#disable-ipv6=true',
+                redir_host_text,
+            )
+            self.assertIn(
+                '    "+.googleapis.com":\n      - https://dns.cloudflare.com/dns-query#disable-ipv6=true\n      - https://dns.google/dns-query#disable-ipv6=true',
+                fake_ip_text,
+            )
+
+    def test_warn_when_disable_ipv6_domains_overlap_local_dns_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "custom_routing_rules.json"
+            out = tmp_path / "out"
+            self.write_source_rules(source)
+            out.mkdir()
+
+            (out / "template.local-dns-domains.txt").write_text("+.corp.internal\n", encoding="utf-8")
+            (out / "template.disable-ipv6-domains.txt").write_text(
+                "+.home.arpa\n+.corp.internal\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_generator(source, out)
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertIn("template.disable-ipv6-domains.txt", result.stderr)
+            self.assertIn("与本地 DNS 直连策略重复", result.stderr)
 if __name__ == "__main__":
     unittest.main()

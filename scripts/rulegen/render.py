@@ -5,7 +5,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .constants import FAKE_IP_FILTER_BASELINE, LOCAL_DNS_POLICY_BASELINE
+from .constants import (
+    FAKE_IP_FILTER_BASELINE,
+    LOCAL_DNS_POLICY_BASELINE,
+    TEMPLATE_DISABLE_IPV6_DOMAINS_FILE,
+    TEMPLATE_LOCAL_DNS_DOMAINS_FILE,
+    TEMPLATE_LOCAL_DNS_SERVERS_FILE,
+)
 from .convert import collect_custom_policy_groups, resolve_policy_group
 from .models import ConvertedRule
 
@@ -270,6 +276,7 @@ def write_readme(path: Path) -> None:
         "3. 如需独立维护策略组，可参考 `proxy-groups-custom.example.yaml`。",
         "4. 如需继续沿用 v2ray 基础库，可合并 `geox-url-v2ray-rules-dat.yaml`。",
         "5. 如需让默认模板识别更多内网 / 开发域名，可在 `clash/template.local-dns-servers.txt` 与 `clash/template.local-dns-domains.txt` 中补充本地 DNS。",
+        "6. 如需保留全局 IPv6、但让少数双栈站点仅返回 A 记录，可在 `clash/template.disable-ipv6-domains.txt` 中补充域名模式。",
         "",
         "## 兼容差异",
         "",
@@ -282,7 +289,9 @@ def write_readme(path: Path) -> None:
         "- `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。",
         "- 默认模板会把常见内网 / 开发域名模式定向到 `direct-nameserver`，降低多端联调时被公网 DNS 抢答的概率。",
         "- 如需解析自定义内网域名，可在 `clash/template.local-dns-servers.txt` / `clash/template.local-dns-domains.txt` 中补充本地 DNS。",
+        "- 如需保留全局 IPv6、但让少数站点禁用 AAAA，可在 `clash/template.disable-ipv6-domains.txt` 中补充域名模式；生成器会把这些域名定向到附带 `disable-ipv6=true` 的公网 DNS。",
         "- DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。",
+        "- `ping` / `ICMP` 不属于 `sniffer` 覆盖范围；验证 `redir-host` 是否生效时，应优先使用浏览器、`curl` 或脚本里的 HTTP/TLS/QUIC 请求。",
         "- 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。",
         "- 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。",
         "- 订阅站模板中，末尾 `MATCH` 固定指向“漏网策略”组，且该组默认首选代理，便于按需切换直连/代理。",
@@ -312,6 +321,14 @@ def append_nameserver_policy_entry(lines: list[str], key: str, servers: list[str
     lines.append(f'    "{key}":')
     for item in servers:
         lines.append(f"      - {item}")
+
+
+def append_dns_server_bool_param(server: str, key: str, enabled: bool) -> str:
+    """为 DNS 上游补充 mihomo 布尔附加参数。"""
+
+    separator = "&" if "#" in server else "#"
+    value = "true" if enabled else "false"
+    return f"{server}{separator}{key}={value}"
 
 
 
@@ -350,6 +367,7 @@ def append_template_dns(
     template_dns_upstream: str,
     template_local_dns_servers: list[str],
     template_local_dns_domains: list[str],
+    template_disable_ipv6_domains: list[str],
 ) -> None:
     """写入订阅模板 DNS 段。
 
@@ -363,6 +381,14 @@ def append_template_dns(
         template_local_dns_servers,
     )
     local_dns_policy_domains = merge_unique_items(LOCAL_DNS_POLICY_BASELINE, template_local_dns_domains)
+    disable_ipv6_policy_domains = [
+        item
+        for item in template_disable_ipv6_domains
+        if item not in local_dns_policy_domains and item != "geosite:cn,private"
+    ]
+    # 少数风控敏感站点只需要“禁 AAAA”，不应因此把整套模板切回 IPv4-only；
+    # 这里继续沿用默认公网 nameserver，只在命中这些域名时附加 disable-ipv6=true。
+    ipv4_only_nameserver = [append_dns_server_bool_param(item, "disable-ipv6", True) for item in nameserver]
 
     lines.append("dns:")
     lines.append("  enable: true")
@@ -388,6 +414,8 @@ def append_template_dns(
     # 2) 当用户补充 template.local-dns-servers.txt 时，同一份模板即可无缝吸收这些本地域名。
     for item in local_dns_policy_domains:
         append_nameserver_policy_entry(lines, item, direct_nameserver)
+    for item in disable_ipv6_policy_domains:
+        append_nameserver_policy_entry(lines, item, ipv4_only_nameserver)
     # default-nameserver 只负责解析域名型 DNS 上游本身；保持 IP 形式可避免启动期出现循环依赖。
     lines.append("  default-nameserver:")
     for item in default_nameserver:
@@ -459,6 +487,7 @@ def write_subscription_template(
     template_dns_upstream: str,
     template_local_dns_servers: list[str],
     template_local_dns_domains: list[str],
+    template_disable_ipv6_domains: list[str],
 ) -> None:
     """生成订阅站模板。
 
@@ -485,7 +514,12 @@ def write_subscription_template(
     lines.append(f"# 4) 当前模板档位：{template_profile}。")
     lines.append(f"# 5) 当前 DNS 模式：{template_dns_mode}。")
     lines.append(f"# 6) 当前 DNS 上游：{template_dns_upstream}。")
-    lines.append("# 7) 如需补充内网 / 开发域名解析，可在同目录维护 template.local-dns-servers.txt / template.local-dns-domains.txt。")
+    lines.append(
+        f"# 7) 如需补充内网 / 开发域名解析，可在同目录维护 {TEMPLATE_LOCAL_DNS_SERVERS_FILE} / {TEMPLATE_LOCAL_DNS_DOMAINS_FILE}。"
+    )
+    lines.append(
+        f"# 8) 如需保留全局 IPv6、但让少数站点强制仅返回 A 记录，可在同目录维护 {TEMPLATE_DISABLE_IPV6_DOMAINS_FILE}。"
+    )
     lines.append("")
     lines.append("mixed-port: 7897")
     lines.append("allow-lan: true")
@@ -504,6 +538,7 @@ def write_subscription_template(
         template_dns_upstream,
         template_local_dns_servers,
         template_local_dns_domains,
+        template_disable_ipv6_domains,
     )
     lines.append("proxies: null")
     lines.append("proxy-groups:")

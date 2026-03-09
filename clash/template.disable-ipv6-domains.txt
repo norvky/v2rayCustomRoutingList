@@ -1,0 +1,8 @@
+# 说明：
+# 1) 一行一条，格式直接复用 mihomo `dns.nameserver-policy` 的 key。
+# 2) 这里建议先只放“已实测在双栈下会异常、且确实需要强制走 IPv4”的域名。
+# 3) 这份清单的目标是“最小收敛”，避免为了少数风控敏感站点把全局 IPv6 直接关掉。
+# 4) 若某条域名同时也需要走本地 DNS，请改放到 template.local-dns-domains.txt，避免语义冲突。
+
+# 已实测：Gemini 在双栈出口不一致时容易触发异常流量拦截。
+gemini.google.com

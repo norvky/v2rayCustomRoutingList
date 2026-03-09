@@ -25,7 +25,20 @@
 - `clash/rules/` 无多余历史残留文件。
 - `clash/template.redir-host.yaml` 与 `clash/template.fake-ip.yaml` 都需与 `custom_routing_rules` 语义一致。
 
-## 5. 版本发布清单
+## 5. 哪些改动需要同步订阅站模板
+
+- 需要同步订阅站模板：
+  - 修改 `scripts/rulegen/render.py` 中的模板运行参数、DNS 段、`sniffer`、代理组结构。
+  - 调整 `clash/template.local-dns-servers.txt` / `clash/template.local-dns-domains.txt` / `clash/template.disable-ipv6-domains.txt`。
+  - 任何会改变 `clash/template.redir-host.yaml` / `clash/template.fake-ip.yaml` 内容的改动。
+- 通常不需要同步订阅站模板：
+  - 仅修改 `custom_routing_rules`，且生成结果只影响 `clash/rules/*.yaml` 与 `clash/mihomo-custom-rules.yaml`。
+  - 仅修改测试、说明文档、参考样例，且未改变模板产物。
+- 判断原则：
+  - 改动若会改变“订阅站最终生成配置里的 `dns` / `sniffer` / 代理组定义”，就必须去订阅站更新模板。
+  - 改动若只影响远程 `rule-providers` 内容，客户端重新拉取规则即可。
+
+## 6. 版本发布清单
 
 1. 代码与产物一致：
 执行 `bash scripts/check.sh`，并确认 `git status --short` 为空。

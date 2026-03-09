@@ -13,6 +13,7 @@
 - 默认模板使用 `redir-host`，且“漏网策略”默认首选代理；如需兼容旧行为，可通过参数生成 `fake-ip` 模板。
 - DNS 上游默认使用 `compat` 形态；如需尽量避免域名型上游，可通过 `--template-dns-upstream pure-ip` 生成纯 IP 模板。
 - 默认模板会把常见内网/开发域名定向到 `direct-nameserver`；如需解析自定义内网域名，可在 `clash/template.local-dns-servers.txt` 与 `clash/template.local-dns-domains.txt` 中补充本地 DNS。
+- 如需保留全局 `IPv6`、但让少数双栈站点仅返回 `A` 记录，可在 `clash/template.disable-ipv6-domains.txt` 中补充域名模式。
 - 正常环境默认：不把外部异常场景（例如默认有代理环境）写成项目默认前提。
 - 职责边界清晰：仓库只保证可控范围内的规则生成与模板一致性。
 

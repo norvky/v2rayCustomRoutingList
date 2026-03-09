@@ -38,6 +38,9 @@ PROTOCOL_FALLBACK_MAP = {
 # - domains 文件用于声明需要强制走本地 DNS 的域名模式；格式直接复用 mihomo nameserver-policy 的 key。
 TEMPLATE_LOCAL_DNS_SERVERS_FILE = "template.local-dns-servers.txt"
 TEMPLATE_LOCAL_DNS_DOMAINS_FILE = "template.local-dns-domains.txt"
+# - disable-ipv6 文件用于声明“保留全局 IPv6、但对少数域名丢弃 AAAA”的策略；
+#   适合 Gemini / Google 这类对双栈出口一致性更敏感的站点，格式同样复用 nameserver-policy 的 key。
+TEMPLATE_DISABLE_IPV6_DOMAINS_FILE = "template.disable-ipv6-domains.txt"
 
 # redir-host 的默认内网/开发域名基线：
 # 1) 这些后缀的共同点是“更适合走客户端所在网络的本地 DNS”，而不是默认公网 nameserver。

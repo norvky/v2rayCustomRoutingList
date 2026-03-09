@@ -64,6 +64,7 @@ python3 scripts/generate_clash_rules.py --no-template
 3. 如需独立维护策略组，可参考 `proxy-groups-custom.example.yaml`。
 4. 如需继续沿用 v2ray 基础库，可合并 `geox-url-v2ray-rules-dat.yaml`。
 5. 如需让默认模板识别更多内网 / 开发域名，可在 `clash/template.local-dns-servers.txt` 与 `clash/template.local-dns-domains.txt` 中补充本地 DNS。
+6. 如需保留全局 IPv6、但让少数双栈站点仅返回 A 记录，可在 `clash/template.disable-ipv6-domains.txt` 中补充域名模式。
 
 ## 兼容差异
 
@@ -76,7 +77,9 @@ python3 scripts/generate_clash_rules.py --no-template
 - `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。
 - 默认模板会把常见内网 / 开发域名模式定向到 `direct-nameserver`，降低多端联调时被公网 DNS 抢答的概率。
 - 如需解析自定义内网域名，可在 `clash/template.local-dns-servers.txt` / `clash/template.local-dns-domains.txt` 中补充本地 DNS。
+- 如需保留全局 IPv6、但让少数站点禁用 AAAA，可在 `clash/template.disable-ipv6-domains.txt` 中补充域名模式；生成器会把这些域名定向到附带 `disable-ipv6=true` 的公网 DNS。
 - DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。
+- `ping` / `ICMP` 不属于 `sniffer` 覆盖范围；验证 `redir-host` 是否生效时，应优先使用浏览器、`curl` 或脚本里的 HTTP/TLS/QUIC 请求。
 - 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。
 - 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。
 - 订阅站模板中，末尾 `MATCH` 固定指向“漏网策略”组，且该组默认首选代理，便于按需切换直连/代理。

@@ -7,6 +7,7 @@
 # 5) 当前 DNS 模式：redir-host。
 # 6) 当前 DNS 上游：compat。
 # 7) 如需补充内网 / 开发域名解析，可在同目录维护 template.local-dns-servers.txt / template.local-dns-domains.txt。
+# 8) 如需保留全局 IPv6、但让少数站点强制仅返回 A 记录，可在同目录维护 template.disable-ipv6-domains.txt。
 
 mixed-port: 7897
 allow-lan: true
@@ -80,6 +81,9 @@ dns:
     "+.svc.cluster.local":
       - 223.5.5.5
       - 119.29.29.29
+    "gemini.google.com":
+      - https://dns.cloudflare.com/dns-query#disable-ipv6=true
+      - https://dns.google/dns-query#disable-ipv6=true
   default-nameserver:
     - 223.5.5.5
     - 119.29.29.29

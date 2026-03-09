@@ -27,10 +27,11 @@
 - 切换漏网策略（直连/代理）后的结果：
 - 切换 `sniffer` / `fake-ip-filter` / DNS 策略前后的结果：
 - `template.local-dns-servers.txt` / `template.local-dns-domains.txt` 调整前后的结果：
+- `template.disable-ipv6-domains.txt` 调整前后的结果：
 
 ## 5. 定位结论
 
-- 根因分类：`规则缺失 / DNS 策略缺项 / sniffer 缺项 / fake-ip-filter 缺项 / 外部环境问题 / 待确认`
+- 根因分类：`规则缺失 / DNS 策略缺项 / IPv6/AAAA 策略缺项 / sniffer 缺项 / fake-ip-filter 缺项 / 外部环境问题 / 待确认`
 - 结论说明：
 
 ## 6. 处理动作
