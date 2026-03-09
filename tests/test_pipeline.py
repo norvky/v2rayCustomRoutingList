@@ -84,11 +84,15 @@ class PipelineTests(unittest.TestCase):
             fake_ip_text = (out / "template.fake-ip.yaml").read_text(encoding="utf-8")
             self.assertIn("RULE-SET,custom-01-domain-direct,🎯 全球直连", main_text)
             self.assertIn("MATCH,🐟 漏网策略", main_text)
+            self.assertIn("全端口/全流量兜底规则已折叠为 MATCH,🐟 漏网策略", main_text)
             self.assertIn("      - 🚀 手动选择\n      - ♻️ 自动选择\n      - 🎯 全球直连", main_text)
             self.assertIn("enhanced-mode: redir-host", redir_host_text)
+            self.assertIn("全端口/全流量兜底规则已折叠为 MATCH,🐟 漏网策略", redir_host_text)
             self.assertIn("force-dns-mapping: true", redir_host_text)
             self.assertIn("direct-nameserver:", redir_host_text)
             self.assertIn("direct-nameserver-follow-policy: true", redir_host_text)
+            self.assertIn("    \"+.home.arpa\":\n      - 223.5.5.5\n      - 119.29.29.29", redir_host_text)
+            self.assertIn("    \"kubernetes.default.svc\":\n      - 223.5.5.5\n      - 119.29.29.29", redir_host_text)
             self.assertIn("https://dns.cloudflare.com/dns-query", redir_host_text)
             self.assertNotIn("fallback:", redir_host_text)
             self.assertNotIn("fake-ip-filter", redir_host_text)
@@ -152,5 +156,41 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("dns.google/dns-query", template_text)
 
 
+
+    def test_merge_local_dns_overrides_into_templates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source = tmp_path / "custom_routing_rules.json"
+            out = tmp_path / "out"
+            self.write_source_rules(source)
+            out.mkdir()
+
+            # 本地 DNS 文件与模板放在同目录维护，便于仓库重生成后持续复用。
+            (out / "template.local-dns-servers.txt").write_text(
+                "# comment\n192.168.1.1\n172.16.0.53\n192.168.1.1\n",
+                encoding="utf-8",
+            )
+            (out / "template.local-dns-domains.txt").write_text(
+                "# comment\n+.corp.internal\n+.home.arpa\n+.corp.internal\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_generator(source, out)
+
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            redir_host_text = (out / "template.redir-host.yaml").read_text(encoding="utf-8")
+            fake_ip_text = (out / "template.fake-ip.yaml").read_text(encoding="utf-8")
+            self.assertIn(
+                "  direct-nameserver:\n    - 192.168.1.1\n    - 172.16.0.53\n    - 223.5.5.5\n    - 119.29.29.29",
+                redir_host_text,
+            )
+            self.assertIn(
+                "    \"+.corp.internal\":\n      - 192.168.1.1\n      - 172.16.0.53\n      - 223.5.5.5\n      - 119.29.29.29",
+                redir_host_text,
+            )
+            self.assertIn(
+                "    \"+.corp.internal\":\n      - 192.168.1.1\n      - 172.16.0.53\n      - 223.5.5.5\n      - 119.29.29.29",
+                fake_ip_text,
+            )
 if __name__ == "__main__":
     unittest.main()

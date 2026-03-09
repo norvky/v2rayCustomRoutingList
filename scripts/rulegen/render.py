@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .constants import FAKE_IP_FILTER_BASELINE
+from .constants import FAKE_IP_FILTER_BASELINE, LOCAL_DNS_POLICY_BASELINE
 from .convert import collect_custom_policy_groups, resolve_policy_group
 from .models import ConvertedRule
 
@@ -120,8 +120,10 @@ def write_main_file(
             # MATCH 是终止型规则；只允许保留最后一次启用结果。
             if not rule.enabled:
                 lines.append("  # 原规则 enabled=false，默认保持禁用。")
+                append_match_all_explanation(lines, fallback_group)
                 lines.append(f"  # - MATCH,{fallback_group}")
                 continue
+            append_match_all_explanation(lines, fallback_group)
             lines.append(f"  - MATCH,{fallback_group}")
             has_terminal_match = True
             continue
@@ -267,6 +269,7 @@ def write_readme(path: Path) -> None:
         "2. 将 `🚀 手动选择` / `♻️ 自动选择` 替换为你的真实代理入口。",
         "3. 如需独立维护策略组，可参考 `proxy-groups-custom.example.yaml`。",
         "4. 如需继续沿用 v2ray 基础库，可合并 `geox-url-v2ray-rules-dat.yaml`。",
+        "5. 如需让默认模板识别更多内网 / 开发域名，可在 `clash/template.local-dns-servers.txt` 与 `clash/template.local-dns-domains.txt` 中补充本地 DNS。",
         "",
         "## 兼容差异",
         "",
@@ -277,6 +280,8 @@ def write_readme(path: Path) -> None:
         "- 默认同时生成 redir-host / fake-ip 两份标准模板，避免仓库在常规重生成时出现无意义的增删漂移。",
         "- `fake-ip` 模式会恢复旧版 `fake-ip-filter` 基线；如需单独导出，可配合 `--template-file` 与 `--template-dns-mode` 使用。",
         "- `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。",
+        "- 默认模板会把常见内网 / 开发域名模式定向到 `direct-nameserver`，降低多端联调时被公网 DNS 抢答的概率。",
+        "- 如需解析自定义内网域名，可在 `clash/template.local-dns-servers.txt` / `clash/template.local-dns-domains.txt` 中补充本地 DNS。",
         "- DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。",
         "- 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。",
         "- 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。",
@@ -287,13 +292,47 @@ def write_readme(path: Path) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def resolve_template_dns_servers(template_dns_upstream: str) -> tuple[list[str], list[str], list[str], list[str]]:
+def merge_unique_items(*groups: list[str]) -> list[str]:
+    """按出现顺序合并列表并去重。"""
+
+    merged: list[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        for item in group:
+            if item in seen:
+                continue
+            seen.add(item)
+            merged.append(item)
+    return merged
+
+
+def append_nameserver_policy_entry(lines: list[str], key: str, servers: list[str]) -> None:
+    """写入单条 nameserver-policy。"""
+
+    lines.append(f'    "{key}":')
+    for item in servers:
+        lines.append(f"      - {item}")
+
+
+
+def append_match_all_explanation(lines: list[str], fallback_group: str) -> None:
+    """为全量兜底规则补充语义说明。"""
+
+    # 源规则里的“全端口直连/代理”在 Clash 中都会折叠成 MATCH；
+    # 这里显式提示最终落点，避免用户只看 remarks 误以为仍是单纯直连。
+    lines.append(f"  # 全端口/全流量兜底规则已折叠为 MATCH,{fallback_group}；该组默认首选代理，可在客户端切回直连。")
+
+def resolve_template_dns_servers(
+    template_dns_upstream: str,
+    template_local_dns_servers: list[str],
+) -> tuple[list[str], list[str], list[str], list[str]]:
     """返回模板使用的 DNS 上游集合。"""
 
     # 直连规则主要承接 `cn/private` 这类明确本地流量，因此继续使用本地可达的 IP 上游，
     # 避免把 LAN/内网访问强行送去默认代理侧的公网解析。
     default_nameserver = ["223.5.5.5", "119.29.29.29"]
-    direct_nameserver = ["223.5.5.5", "119.29.29.29"]
+    # 用户补充的局域网 DNS 需要排在前面，才能真正接住 home.arpa / 公司内网域名这类“只在本地可解析”的请求。
+    direct_nameserver = merge_unique_items(template_local_dns_servers, ["223.5.5.5", "119.29.29.29"])
     # 代理节点域名需要尽量避开本地污染链路，因此默认固定到公共 IP DNS。
     proxy_server_nameserver = ["1.1.1.1", "8.8.8.8"]
     if template_dns_upstream == "pure-ip":
@@ -309,6 +348,8 @@ def append_template_dns(
     template_profile: str,
     template_dns_mode: str,
     template_dns_upstream: str,
+    template_local_dns_servers: list[str],
+    template_local_dns_domains: list[str],
 ) -> None:
     """写入订阅模板 DNS 段。
 
@@ -318,8 +359,10 @@ def append_template_dns(
 
     _ = template_profile
     nameserver, default_nameserver, direct_nameserver, proxy_server_nameserver = resolve_template_dns_servers(
-        template_dns_upstream
+        template_dns_upstream,
+        template_local_dns_servers,
     )
+    local_dns_policy_domains = merge_unique_items(LOCAL_DNS_POLICY_BASELINE, template_local_dns_domains)
 
     lines.append("dns:")
     lines.append("  enable: true")
@@ -340,6 +383,11 @@ def append_template_dns(
     lines.append("    geosite:cn,private:")
     for item in direct_nameserver:
         lines.append(f"      - {item}")
+    # 常见内网/开发域名应优先落到 direct-nameserver：
+    # 1) 让 redir-host 在本地联调时先走“本地 DNS + 直连”路径，而不是默认公网解析；
+    # 2) 当用户补充 template.local-dns-servers.txt 时，同一份模板即可无缝吸收这些本地域名。
+    for item in local_dns_policy_domains:
+        append_nameserver_policy_entry(lines, item, direct_nameserver)
     # default-nameserver 只负责解析域名型 DNS 上游本身；保持 IP 形式可避免启动期出现循环依赖。
     lines.append("  default-nameserver:")
     for item in default_nameserver:
@@ -409,6 +457,8 @@ def write_subscription_template(
     template_profile: str,
     template_dns_mode: str,
     template_dns_upstream: str,
+    template_local_dns_servers: list[str],
+    template_local_dns_domains: list[str],
 ) -> None:
     """生成订阅站模板。
 
@@ -435,6 +485,7 @@ def write_subscription_template(
     lines.append(f"# 4) 当前模板档位：{template_profile}。")
     lines.append(f"# 5) 当前 DNS 模式：{template_dns_mode}。")
     lines.append(f"# 6) 当前 DNS 上游：{template_dns_upstream}。")
+    lines.append("# 7) 如需补充内网 / 开发域名解析，可在同目录维护 template.local-dns-servers.txt / template.local-dns-domains.txt。")
     lines.append("")
     lines.append("mixed-port: 7897")
     lines.append("allow-lan: true")
@@ -446,7 +497,14 @@ def write_subscription_template(
     lines.append("global-client-fingerprint: chrome")
     append_template_runtime(lines, template_profile, template_dns_mode)
     lines.append("external-controller: 127.0.0.1:9090")
-    append_template_dns(lines, template_profile, template_dns_mode, template_dns_upstream)
+    append_template_dns(
+        lines,
+        template_profile,
+        template_dns_mode,
+        template_dns_upstream,
+        template_local_dns_servers,
+        template_local_dns_domains,
+    )
     lines.append("proxies: null")
     lines.append("proxy-groups:")
     lines.append(f"  - name: {proxy_group}")
@@ -512,8 +570,10 @@ def write_subscription_template(
         if rule.is_match_all:
             if not rule.enabled:
                 lines.append("  # 原规则 enabled=false，默认保持禁用。")
+                append_match_all_explanation(lines, fallback_group)
                 lines.append(f"  # - MATCH,{fallback_group}")
                 continue
+            append_match_all_explanation(lines, fallback_group)
             lines.append(f"  - MATCH,{fallback_group}")
             has_terminal_match = True
             continue

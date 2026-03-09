@@ -26,6 +26,7 @@
 - 关闭代理后的结果：
 - 切换漏网策略（直连/代理）后的结果：
 - 切换 `sniffer` / `fake-ip-filter` / DNS 策略前后的结果：
+- `template.local-dns-servers.txt` / `template.local-dns-domains.txt` 调整前后的结果：
 
 ## 5. 定位结论
 

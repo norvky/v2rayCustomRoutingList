@@ -33,6 +33,32 @@ PROTOCOL_FALLBACK_MAP = {
     "bittorrent": "GEOSITE,category-pt",
 }
 
+# 订阅站模板的可选本地 DNS 补充文件：
+# - servers 文件用于声明“客户端可直连访问”的局域网 DNS；生成器会把它们前置到 direct-nameserver。
+# - domains 文件用于声明需要强制走本地 DNS 的域名模式；格式直接复用 mihomo nameserver-policy 的 key。
+TEMPLATE_LOCAL_DNS_SERVERS_FILE = "template.local-dns-servers.txt"
+TEMPLATE_LOCAL_DNS_DOMAINS_FILE = "template.local-dns-domains.txt"
+
+# redir-host 的默认内网/开发域名基线：
+# 1) 这些后缀的共同点是“更适合走客户端所在网络的本地 DNS”，而不是默认公网 nameserver。
+# 2) 这里刻意不包含 localhost / *.localhost：这类名字更依赖本机 hosts/回环语义，
+#    直接转发给局域网 DNS 并不能稳定解决问题，反而容易制造“为什么 127.0.0.1 还要查外部 DNS”的误解。
+# 3) 当用户在同目录补充 template.local-dns-servers.txt 时，这些域名会优先落到用户声明的本地 DNS。
+LOCAL_DNS_POLICY_BASELINE = [
+    "+.local",
+    "+.localdomain",
+    "+.lan",
+    "+.home.arpa",
+    "+.internal",
+    "+.test",
+    "host.docker.internal",
+    "gateway.docker.internal",
+    "+.docker.internal",
+    "kubernetes.default.svc",
+    "+.svc",
+    "+.svc.cluster.local",
+]
+
 # fake-ip 过滤基线：覆盖开发机常见的本地域名、容器互联域名与基础系统探测域名。
 # 这份基线不追求“一次性全覆盖”，而是降低默认故障率，并给后续增量维护提供稳定起点。
 FAKE_IP_FILTER_BASELINE = [

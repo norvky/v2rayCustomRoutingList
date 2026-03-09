@@ -6,6 +6,7 @@
 # 4) 当前模板档位：compat。
 # 5) 当前 DNS 模式：fake-ip。
 # 6) 当前 DNS 上游：compat。
+# 7) 如需补充内网 / 开发域名解析，可在同目录维护 template.local-dns-servers.txt / template.local-dns-domains.txt。
 
 mixed-port: 7897
 allow-lan: true
@@ -33,6 +34,42 @@ dns:
   direct-nameserver-follow-policy: true
   nameserver-policy:
     geosite:cn,private:
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.local":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.localdomain":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.lan":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.home.arpa":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.internal":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.test":
+      - 223.5.5.5
+      - 119.29.29.29
+    "host.docker.internal":
+      - 223.5.5.5
+      - 119.29.29.29
+    "gateway.docker.internal":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.docker.internal":
+      - 223.5.5.5
+      - 119.29.29.29
+    "kubernetes.default.svc":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.svc":
+      - 223.5.5.5
+      - 119.29.29.29
+    "+.svc.cluster.local":
       - 223.5.5.5
       - 119.29.29.29
   default-nameserver:
@@ -182,6 +219,7 @@ rules:
   # 15 域名_区域_代理
   - RULE-SET,custom-15-domain-region-proxy,🚀 手动选择
   # 16 端口_全部_直连
+  # 全端口/全流量兜底规则已折叠为 MATCH,🐟 漏网策略；该组默认首选代理，可在客户端切回直连。
   - MATCH,🐟 漏网策略
 rule-providers:
   custom-01-crack-block:

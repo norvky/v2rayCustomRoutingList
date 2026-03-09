@@ -63,6 +63,7 @@ python3 scripts/generate_clash_rules.py --no-template
 2. 将 `🚀 手动选择` / `♻️ 自动选择` 替换为你的真实代理入口。
 3. 如需独立维护策略组，可参考 `proxy-groups-custom.example.yaml`。
 4. 如需继续沿用 v2ray 基础库，可合并 `geox-url-v2ray-rules-dat.yaml`。
+5. 如需让默认模板识别更多内网 / 开发域名，可在 `clash/template.local-dns-servers.txt` 与 `clash/template.local-dns-domains.txt` 中补充本地 DNS。
 
 ## 兼容差异
 
@@ -73,6 +74,8 @@ python3 scripts/generate_clash_rules.py --no-template
 - 默认同时生成 redir-host / fake-ip 两份标准模板，避免仓库在常规重生成时出现无意义的增删漂移。
 - `fake-ip` 模式会恢复旧版 `fake-ip-filter` 基线；如需单独导出，可配合 `--template-file` 与 `--template-dns-mode` 使用。
 - `redir-host` 模式默认内置 `sniffer` 基线，减少真实 IP 连接下的分流误判。
+- 默认模板会把常见内网 / 开发域名模式定向到 `direct-nameserver`，降低多端联调时被公网 DNS 抢答的概率。
+- 如需解析自定义内网域名，可在 `clash/template.local-dns-servers.txt` / `clash/template.local-dns-domains.txt` 中补充本地 DNS。
 - DNS 默认按“显式直连少数规则 + MATCH 默认代理”建模：`nameserver` 走可信公网解析，`geosite:cn/private` 走 `direct-nameserver`。
 - 如需尽量避免域名型 DNS 上游，可配合 `--template-dns-upstream pure-ip` 生成纯 IP 模板。
 - 纯 `0-65535` / `1-65535` 全端口兜底规则会自动转换为 `MATCH`。
