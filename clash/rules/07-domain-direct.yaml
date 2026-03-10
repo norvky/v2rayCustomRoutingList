@@ -10,6 +10,7 @@ payload:
   - DOMAIN-SUFFIX,dash.cloudflare.com
   - DOMAIN-SUFFIX,faconhost.com
   - DOMAIN-SUFFIX,fdue.de
+  - DOMAIN-SUFFIX,hifini.net
   - DOMAIN-SUFFIX,ikun.tv
   - DOMAIN-SUFFIX,jetbrains.com
   - DOMAIN-SUFFIX,lencr.org
