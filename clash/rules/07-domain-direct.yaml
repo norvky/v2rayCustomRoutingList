@@ -19,6 +19,7 @@ payload:
   - DOMAIN-SUFFIX,novky.me
   - DOMAIN-SUFFIX,ping.pe
   - DOMAIN-SUFFIX,vo.msecnd.net
+  - DOMAIN-SUFFIX,vscode-cdn.net
   - DOMAIN,login.live.com
   - DOMAIN,login.microsoftonline.com
   - DOMAIN,marketplace.visualstudio.com
