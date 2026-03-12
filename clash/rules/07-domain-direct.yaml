@@ -23,6 +23,7 @@ payload:
   - DOMAIN,login.live.com
   - DOMAIN,login.microsoftonline.com
   - DOMAIN,marketplace.visualstudio.com
+  - DOMAIN,ms-vscode-remote.gallerycdn.vsassets.io
   - DOMAIN,otheve.beacon.qq.com
   - DOMAIN,substrate.office.com
   - DOMAIN,vscode-sync.trafficmanager.net
